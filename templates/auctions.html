@@ -1,0 +1,16 @@
+{% include 'navbar.html' %}
+
+
+<h1>Auction Listings </h1>
+
+<div>
+    <div>
+        {% for auction in auction_listings %}
+
+        <div>
+            <h5>{{auction.id}} -- <a href='/item/{{auction.id}}'>{{auction.name}}</a></h5>
+        </div>
+
+        {% endfor %}
+    </div>
+</div>
