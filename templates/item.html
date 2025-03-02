@@ -1,7 +1,48 @@
 {% include 'navbar.html' %}
 
 <div>
-    <h1>{{item.name}}</h1>
+    <h1>{{auction.product.name}}</h1>
+    <p>{{ auction.product.description }}</p>
+    <br>
+    <p>Base Price: {{auction.product.base_price}}</p>
+    <p>Higest Bid: {{auction.higest_bid}}</p>
+    <br>
+    <p>Auction Start: {{ auction.start_time }}</p>
+    <p>Auction End: {{ auction.end_time }}</p>
+    <br>
+</div>
+
+<div>
+    {% if request.user.is_authenticated %}
+        {% if now >= auction.start_time and now < auction.end_time %}
+            <form method="POST", action="">
+                {% csrf_token %}
+                <label for="bid">Your Bid:</label>
+                <input type="number" name="bid_amount" id="bid" step="0.01" placeholder="Enter Bid Amount" required>
+                <button type="submit" value="Submit">Place Bid</button>
+            </form>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div>
+    <h2>Bid History</h2>
+    {% for bid in bids %}
+        <div>
+            <small>@{{ bid.bidder.username }} - {{ bid.bid_time|timesince }} ago</small>
+            <p>Bid Amount: {{ bid.bid_amount }}</p>
+            <hr>
+        </div>
+    {% empty %}
+        <p>No bids yet. Be the first to bid!</p>
+    {% endfor %}
+    {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+    {% endif %}
 </div>
 
 

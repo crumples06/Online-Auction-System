@@ -1,0 +1,13 @@
+{% include 'navbar.html' %}
+
+<div>
+    <a href="{% url 'add_auction' %}">Auction an existing product</a>
+    <div>
+        <form action="" method="POST">
+            {% csrf_token %}
+            {{form}}
+            <input type="submit", value="Submit">
+        </form>
+    </div>
+</div>
+

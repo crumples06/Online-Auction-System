@@ -6,4 +6,5 @@ from .models import *
 
 admin.site.register(AuctionUser)
 admin.site.register(Product)
-admin.site.register(Participant)
+admin.site.register(Auction)
+admin.site.register(Bid)
