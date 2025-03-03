@@ -2,7 +2,8 @@
 
 <div>
     <h1>{{auction.product.name}}</h1>
-    <p>{{ auction.product.description }}</p>
+    <p>Description: {{ auction.product.description }}</p>
+    <p>Status :{{ auction.status }}</p>
     <br>
     <p>Base Price: {{auction.product.base_price}}</p>
     <p>Higest Bid: {{auction.higest_bid}}</p>
@@ -10,6 +11,16 @@
     <p>Auction Start: {{ auction.start_time }}</p>
     <p>Auction End: {{ auction.end_time }}</p>
     <br>
+</div>
+
+<div>
+    <h2>Item Images</h2>
+    <p>Image Count: {{ auction.product.images.count }}</p>
+    {% for image in auction.product.images.all %}
+            <img src="{{ image.image.url }}" alt="Product Image" width="200">
+        {% empty %}
+            <p>No images available.</p>
+    {% endfor %}
 </div>
 
 <div>

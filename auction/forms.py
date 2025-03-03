@@ -1,5 +1,7 @@
 from django.forms import ModelForm, DateTimeInput
-from .models import Auction, Product, AuctionUser
+from .models import Auction, Product, AuctionUser, ProductImage
+from django import forms
+
 
 class AuctionForm(ModelForm):
     class Meta:

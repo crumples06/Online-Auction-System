@@ -58,13 +58,19 @@ def home(request):
     return render(request, 'home.html')
 
 def auctions(request):
-    auction_listings = Auction.objects.filter(end_time__gt=now())
+    current_time = now()
+    Auction.objects.filter(start_time__gt=current_time).update(status='Starting Soon')
+    Auction.objects.filter(start_time__lte=current_time, end_time__gt=current_time).update(status='Active')
+    Auction.objects.filter(end_time__lte=current_time).update(status='Closed')
+
+    auction_listings = Auction.objects.exclude(status='Closed')
     context = {'auction_listings':auction_listings}
     return render(request, 'auctions.html', context)
 
 def item(request, pk):
     auction = Auction.objects.get(id=pk)
     bids = auction.bid_set.all().order_by('-bid_time')
+    current_time = now()
 
     if request.method == 'POST':
         bid_amount = float(request.POST.get('bid_amount'))
@@ -78,7 +84,7 @@ def item(request, pk):
         else:
             messages.error(request, 'Your bid must be higher than the current highest bid.')
 
-    context = {'auction':auction, 'bids':bids}
+    context = {'auction':auction, 'bids':bids, 'now':current_time}
     return render(request, 'item.html', context)
 
 @login_required(login_url='login')
@@ -97,13 +103,22 @@ def add_auction(request):
 @login_required(login_url='login')
 def add_product(request):
     form = ProductForm()
+    files = request.FILES.getlist('images')
 
     if request.method == 'POST':
-        form = ProductForm(request.POST)
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            product = form.save()
+
+            for file in files:
+                ProductImage.objects.create(product=product, image=file)
             return redirect('add_auction')
         
     context = {'form':form}
     return render(request, 'add_product.html', context)
 
+def userProfile(request, pk):
+    user = User.objects.get(id=pk)
+    auction = user.auction_selling.all().order_by('-start_time')
+    context = {'user':user, 'auction':auction}
+    return render(request, 'profile.html', context)

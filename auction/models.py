@@ -15,7 +15,6 @@ class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True)    
     base_price = models.IntegerField(default=0)
-    status = models.CharField(max_length=20, default='Active')
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -23,12 +22,20 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', null=True)
+    image = models.ImageField(upload_to='product_images/')
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 class Auction(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auction_selling')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    status = models.CharField(max_length=15, blank=True, null=True)
     higest_bid = models.DecimalField(decimal_places=2, default=0.0, max_digits=15)
     winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='auction_won')
 
