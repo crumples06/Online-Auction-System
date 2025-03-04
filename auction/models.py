@@ -51,4 +51,18 @@ class Bid(models.Model):
     def __str__(self):
         return self.auction.product.name
 
+class Review(models.Model):
+    winner = models.ForeignKey(User, on_delete=models.CASCADE)  # Only winners can review
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="seller_reviews")
+    auction = models.ForeignKey('Auction', on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])  # Rating from 1 to 5
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('winner', 'auction')  # Prevent multiple reviews for the same auction
+
+    def __str__(self):
+        return f"Review by {self.winner.username} for {self.seller.username}"
+
 

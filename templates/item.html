@@ -14,6 +14,21 @@
 </div>
 
 <div>
+    {% if request.user == auction.winner and now >= auction.end_time %}
+    {% if form %}
+        <h3>Leave a Review</h3>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" name="review_submit">Submit Review</button>
+        </form>
+    {% else %}
+        <p>You have already submitted a review for this auction.</p>
+    {% endif %}
+    {% endif %}
+</div>
+
+<div>
     <h2>Item Images</h2>
     <p>Image Count: {{ auction.product.images.count }}</p>
     {% for image in auction.product.images.all %}

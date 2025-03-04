@@ -1,6 +1,12 @@
+{% include 'navbar.html' %}
+
 <div>
 
     <h1>{{ user.username }}</h1>
+
+    <div>
+        
+    </div>
 
     <div>
         <h2>Auctions</h2>
@@ -9,8 +15,21 @@
             <br>
             <p>Higest Bid: {{ auction.higest_bid }}</p>
             <br>
-            <p>Status: {{ auction.product.status }}</p>
+            <p>Status: {{ auction.status }}</p>
             <hr>
+            {% empty %}
+                <p>No Auctions Placed</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <h3>Seller Reviews:</h3>
+        {% for review in reviews %}
+            <p><strong>Rating:</strong> {{ review.rating }}/5</p>
+            <p><strong>Comment:</strong> {{ review.comment }}</p>
+            <hr>
+            {% empty %}
+                <p>No reviews yet.</p>
         {% endfor %}
     </div>
 
