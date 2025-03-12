@@ -46,6 +46,8 @@ def registerPage(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
+            user.first_name = form.cleaned_data['first_name']  
+            user.last_name = form.cleaned_data['last_name']
             user.email = form.cleaned_data['email']
             user.save()
 
@@ -131,9 +133,9 @@ def item(request, pk):
 
 @login_required(login_url='login')
 def add_auction(request):
-    form = AuctionForm()
+    form = AuctionForm(user=request.user)
     if request.method == 'POST':
-        form = AuctionForm(request.POST)
+        form = AuctionForm(request.POST, user=request.user)
         if form.is_valid():
             auction = form.save(commit=False)
             auction.seller = request.user  # Set seller automatically
@@ -153,8 +155,10 @@ def add_product(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            product = form.save()
-
+            product = form.save(commit=False)
+            product.owner = request.user
+            product.save()
+            
             for file in files:
                 ProductImage.objects.create(product=product, image=file)
             return redirect('add_auction')

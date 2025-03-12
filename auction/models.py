@@ -16,6 +16,7 @@ class Product(models.Model):
     description = models.TextField(null=True)    
     base_price = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="products", null=True)
 
     class Meta:
         ordering = ['-created']
