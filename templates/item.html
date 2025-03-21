@@ -12,6 +12,13 @@
     <p>Auction Start: {{ auction.start_time }}</p>
     <p>Auction End: {{ auction.end_time }}</p>
     <br>
+    {% if request.user.is_authenticated %}
+        {% if auction.id in watched_auctions_ids %}
+            <a href="{% url 'remove_from_watchlist' auction.id %}">Remove from Watchlist</a>
+        {% else %}
+            <a href="{% url 'add_to_watchlist' auction.id %}">Add to Watchlist</a>
+        {% endif %}
+    {% endif %}
 </div>
 
 <div>
@@ -46,7 +53,7 @@
                 {% csrf_token %}
                 <label for="bid">Your Bid:</label>
                 <input type="number" name="bid_amount" id="bid" step="0.01" placeholder="Enter Bid Amount" required>
-                <button type="submit" value="Submit">Place Bid</button>
+                <button type="submit" value="Submit" name="bid_submit">Place Bid</button>
             </form>
         {% endif %}
     {% endif %}

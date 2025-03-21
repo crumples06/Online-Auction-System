@@ -1,0 +1,13 @@
+{% include 'navbar.html' %}
+
+<h2>My Watchlist</h2>
+
+{% for item in watchlist_items %}
+    <div>
+        <a href="{% url 'item' item.auction.id %}">{{item.auction.product.name}}</a>
+        <p>Ends on: {{item.auction.end_time}}</p>
+        <a href="{% url 'remove_from_watchlist' item.auction.id %}">Remove</a>
+    </div>
+{% empty %}
+    <p>You have no items in your watchlist</p>
+{% endfor %}

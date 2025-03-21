@@ -2,12 +2,14 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import *
 from .forms import *
+from .utils import *
 from django.contrib.auth.models import User 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import get_object_or_404
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
+from decimal import Decimal
 
 # Create your views here.
 
@@ -93,14 +95,30 @@ def item(request, pk):
                 messages.error(request, "You need to log in to place a bid.")
                 return redirect('login')
 
-            bid_amount = float(request.POST.get('bid_amount'))
-            if bid_amount > float(auction.higest_bid) and bid_amount > float(auction.product.base_price):
+            bid_amount = Decimal(request.POST.get('bid_amount'))
+            if bid_amount > Decimal(auction.higest_bid) and bid_amount > Decimal(auction.product.base_price):
+                previous_winner = auction.winner
+
                 auction.higest_bid = bid_amount
+
+                #Auto extending time to prevent bid sniping
+                remaining_time = (auction.end_time - now()).total_seconds()
+                if remaining_time < 300:
+                    auction.end_time += timedelta(minutes=5)
+                    messages.success(request, "Auction extended by 5 minutes!")
+
                 auction.winner = request.user
                 auction.save()
 
                 Bid.objects.create(auction=auction, bidder=request.user, bid_amount=bid_amount)
                 messages.success(request, 'Your bid has been placed successfully.')
+
+                if previous_winner and previous_winner != request.user:
+                    send_notification_email(
+                        subject='You have been outbid!',
+                        message=f"Your bid has been surpassed on {auction.product.name}. Place a higher bid to win!",
+                        recipient_email=previous_winner.email
+                    )
             else:
                 messages.error(request, 'Your bid must be higher than the current highest bid.')
 
@@ -122,7 +140,10 @@ def item(request, pk):
     if request.user.is_authenticated and request.user == auction.winner:
         form = ReviewForm()
 
+    watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
+
     context = {
+        'watched_auctions_ids': watched_auctions_ids,
         'auction': auction,
         'bids': bids,
         'reviews': reviews,
@@ -175,3 +196,18 @@ def userProfile(request, pk):
     return render(request, 'profile.html', context)
 
 
+@login_required(login_url='login')
+def watchlist(request):
+    items = Watchlist.objects.filter(user=request.user).select_related('auction')
+    context = {'watchlist_items' : items}
+    return render(request, 'watchlist.html', context)
+
+def add_to_watchlist(request, pk):
+    auction = Auction.objects.get(id=pk)
+    Watchlist.objects.get_or_create(user=request.user, auction=auction)
+    return redirect('item', pk=pk)
+
+def remove_from_watchlist(request, pk):
+    auction = Auction.objects.get(id=pk)
+    Watchlist.objects.filter(user=request.user, auction=auction).delete()
+    return redirect('item', pk=pk)

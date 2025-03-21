@@ -67,3 +67,13 @@ class Review(models.Model):
         return f"Review by {self.winner.username} for {self.seller.username}"
 
 
+class Watchlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watchlist')
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'auction') # Prevent duplicate watchlist entries
+
+    def __str__(self):
+        return f"{self.user.username} watching {self.auction.product}"
