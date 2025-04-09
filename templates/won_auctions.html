@@ -1,0 +1,16 @@
+{% include 'navbar.html' %}
+
+<h2>Auctions You've Won</h2>
+
+{% if won_auctions %}
+    {% for auction in won_auctions %}
+        <div>
+            <h3><a href="{% url 'item' auction.id %}">{{ auction.product.name }}</a></h3>
+            <p>End Time: {{ auction.end_time }}</p>
+            <p>Winning Bid: {{ auction.higest_bid }}</p>
+            <hr>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>You haven't won any auctions yet.</p>
+{% endif %}

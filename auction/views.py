@@ -10,6 +10,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, timedelta
 from decimal import Decimal
+from django.http import Http404
 
 # Create your views here.
 
@@ -211,3 +212,12 @@ def remove_from_watchlist(request, pk):
     auction = Auction.objects.get(id=pk)
     Watchlist.objects.filter(user=request.user, auction=auction).delete()
     return redirect('item', pk=pk)
+
+@login_required(login_url='login')
+def won_auctions(request, user_id):
+    if request.user.id != user_id:
+        raise Http404("You are not authorized to view this page.")
+    
+    won_auctions = Auction.objects.filter(winner=request.user, end_time__lte=now())
+    context = {'won_auctions': won_auctions}
+    return render(request, 'won_auctions.html', context)

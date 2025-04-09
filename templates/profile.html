@@ -4,9 +4,10 @@
 
     <h1>{{ user.username }}</h1>
 
-    <div>
-        
-    </div>
+    {% if request.user == user %}   
+        <a href="{% url 'won_auctions' request.user.id %}">View Your Won Auctions</a>
+    {% endif %}
+
 
     <div>
         <h2>Auctions</h2>

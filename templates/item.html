@@ -48,7 +48,7 @@
 
 <div>
     {% if request.user.is_authenticated %}
-        {% if now >= auction.start_time and now < auction.end_time %}
+        {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
             <form method="POST", action="">
                 {% csrf_token %}
                 <label for="bid">Your Bid:</label>

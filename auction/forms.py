@@ -21,11 +21,11 @@ class AuctionForm(ModelForm):
         if user:
             self.fields['product'].queryset = Product.objects.filter(owner=user)
 
-    def clean_start_time(self):
+    """def clean_start_time(self):
         start_time = self.cleaned_data.get('start_time')
         if start_time and start_time < now():
             raise forms.ValidationError("Start time cannot be in the past.")
-        return start_time
+        return start_time"""
     
     def clean_end_time(self):
         start_time = self.cleaned_data.get('start_time')
