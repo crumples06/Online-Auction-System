@@ -138,3 +138,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'tanishmicrosoft123@gmail.com'
 EMAIL_HOST_PASSWORD = 'tskm kdey vrix ocpn'
+
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True
+

@@ -1,3 +1,5 @@
+{% load tz %}
+
 {% include 'navbar.html' %}
 
 <div>
@@ -9,8 +11,10 @@
     <p>Base Price: {{auction.product.base_price}}</p>
     <p>Higest Bid: {{auction.higest_bid}}</p>
     <br>
-    <p>Auction Start: {{ auction.start_time }}</p>
-    <p>Auction End: {{ auction.end_time }}</p>
+    <p>Auction Start: {{ auction.start_time|localtime }}</p>
+    <p>Auction End: {{ auction.end_time|localtime }}</p>
+    <p>Current time: {{ now }}</p>
+
     <br>
     {% if request.user.is_authenticated %}
         {% if auction.id in watched_auctions_ids %}
@@ -57,6 +61,25 @@
             </form>
         {% endif %}
     {% endif %}
+</div>
+
+<div>
+    {% if auction.winner == request.user and auction.end_time < now %}
+    {% if not auction.is_paid and not auction.is_delivered %}
+        <form method="POST" action="{% url 'make_payment' auction.id %}">
+            {% csrf_token %}
+            <button type="submit">Pay Now</button>
+        </form>
+    {% elif not auction.is_delivered %}
+        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+            {% csrf_token %}
+            <button type="submit">Mark as Received</button>
+        </form>
+    {% else %}
+        <p>You have completed this purchase and confirmed delivery.</p>
+    {% endif %}
+    {% endif %}
+
 </div>
 
 <div>

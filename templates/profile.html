@@ -26,7 +26,8 @@
     <div>
         <h3>Seller Reviews:</h3>
         {% for review in reviews %}
-            <p><strong>Rating:</strong> {{ review.rating }}/5</p>
+            <p>Auction: <a href='/item/{{review.auction.id}}'>{{review.auction}}</a> </p>
+            <p><strong>Rating:</strong> {{ review.rating }} ⭐</p>
             <p><strong>Comment:</strong> {{ review.comment }}</p>
             <hr>
             {% empty %}

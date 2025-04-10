@@ -193,7 +193,7 @@ def userProfile(request, pk):
     seller = get_object_or_404(AuctionUser, user=user)
     reviews = Review.objects.filter(seller=user).order_by('-created_at')
     auction = user.auction_selling.all().order_by('-start_time')
-    context = {'user':user, 'auction':auction, 'review':reviews, 'seller':seller}
+    context = {'user':user, 'auction':auction, 'reviews':reviews, 'seller':seller}
     return render(request, 'profile.html', context)
 
 
@@ -221,3 +221,42 @@ def won_auctions(request, user_id):
     won_auctions = Auction.objects.filter(winner=request.user, end_time__lte=now())
     context = {'won_auctions': won_auctions}
     return render(request, 'won_auctions.html', context)
+
+@login_required
+def confirm_delivery(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+
+    if auction.winner != request.user or not auction.is_paid:
+        messages.error(request, "You can't confirm this delivery.")
+        return redirect('item', pk=auction_id)
+
+    if request.method == 'POST':
+        auction.is_delivered = True
+        auction.save()
+        messages.success(request, "Delivery confirmed. Thank you!")  
+        return redirect('item', pk=auction_id)
+
+    return redirect('item', pk=auction_id)
+
+
+
+@login_required
+def make_payment(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+
+    if auction.winner != request.user:
+        messages.error(request, "You are not authorized to make this payment.")
+        return redirect('item', pk=auction_id)
+
+    if auction.end_time > now():
+        messages.error(request, "Auction has not ended yet.")
+        return redirect('item', pk=auction_id)
+
+    if request.method == 'POST':
+        auction.is_paid = True
+        auction.save()
+        messages.success(request, "Payment successful!")
+        return redirect('item', pk=auction_id)
+
+    return redirect('item', pk=auction_id)
+

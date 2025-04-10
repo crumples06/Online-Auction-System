@@ -39,6 +39,9 @@ class Auction(models.Model):
     status = models.CharField(max_length=15, blank=True, null=True)
     higest_bid = models.DecimalField(decimal_places=2, default=0.0, max_digits=15)
     winner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='auction_won')
+    is_paid = models.BooleanField(default=False)
+    is_delivered = models.BooleanField(default=False)
+    buyer_confirmed = models.BooleanField(default=False)
 
     def __str__(self):
         return self.product.name
