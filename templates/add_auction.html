@@ -1,18 +1,24 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
+{% block content %}
 
-<div>
-    <h2>Create Auction</h2>
+<div class="container mt-5">
+    <h2 class="mb-4">Create Auction</h2>
+
     {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li class="{{ message.tags }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
+        <div class="alert alert-info">
+            <ul class="mb-0">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 
-    <form action="" method="POST">
+    <form action="" method="POST" class="shadow p-4 rounded bg-light">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Submit</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 </div>
+
+{% endblock %}

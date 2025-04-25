@@ -1,10 +1,8 @@
-{% include 'navbar.html' %}
 
-<div>
-    <a href="{% url 'add_product' %}">Add Product</a>
-
-    <h1>Home Template </h1>
-
-    <a href="{% url 'auctions' %}">Auctions</a>
-</div>
-
+{% extends 'base.html' %}
+{% block content %}
+  <div class="text-center">
+    <a href="{% url 'add_product' %}" class="btn btn-primary m-2">Add Product</a>
+    <a href="{% url 'auctions' %}" class="btn btn-success m-2">Browse Auctions</a>
+  </div>
+{% endblock %}

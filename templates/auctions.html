@@ -1,14 +1,17 @@
-{% include 'navbar.html' %}
-
-
-<h1>Auction Listings </h1>
-
-<div>
-    <div>
-        {% for auction in auction_listings %}
-                <div>
-                    <h5>{{auction.id}} -- <a href='/item/{{auction.id}}'>{{auction.product.name}}</a></h5>
-                </div>
-        {% endfor %}
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block content %}
+  <h1 class="mb-4">Auction Listings</h1>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for auction in auction_listings %}
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><a href="{% url 'item' auction.id %}">{{ auction.product.name }}</a></h5>
+            <p>Status: {{ auction.status }}</p>
+            <p>Highest Bid: ₹{{ auction.higest_bid }}</p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

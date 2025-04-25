@@ -1,18 +1,23 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
+{% block content %}
 
-<div>
-    <a href="{% url 'add_auction' %}">Auction an existing product</a>
-    <div>
+<div class="container mt-5">
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'add_auction' %}" class="btn btn-outline-secondary">Auction an Existing Product</a>
+    </div>
+
+    <div class="shadow p-4 rounded bg-light">
+        <h2 class="mb-4">Add New Product</h2>
         <form action="" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            {{form.as_p}}
-            <label for="images">Upload Images:</label>
-            <input type="file" name="images" id="images" multiple>
-            <!-- add required later -->
-    
-            <button type="submit">Add Product</button>
-            <!--<input type="submit", value="Submit">-->
+            {{ form.as_p }}
+            <div class="mb-3">
+                <label for="images" class="form-label">Upload Images:</label>
+                <input type="file" name="images" id="images" multiple class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Add Product</button>
         </form>
     </div>
 </div>
 
+{% endblock %}

@@ -1,105 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
 {% load tz %}
 
-{% include 'navbar.html' %}
+<div class="container my-4">
+    <div class="card p-4 shadow-sm">
+        <h1 class="mb-3">{{ auction.product.name }}</h1>
+        <h5 class="text-muted">Seller: 
+            <a href="{% url 'userProfile' auction.product.owner.id %}">{{ auction.product.owner.username }}</a>
+        </h5>
+        <p class="mt-2"><strong>Description:</strong> {{ auction.product.description }}</p>
+        <p><strong>Status:</strong> {{ auction.status }}</p>
+        <p><strong>Base Price:</strong> ₹{{ auction.product.base_price }}</p>
+        <p><strong>Highest Bid:</strong> ₹{{ auction.higest_bid }}</p>
+        <p><strong>Auction Start:</strong> {{ auction.start_time|localtime }}</p>
+        <p><strong>Auction End:</strong> {{ auction.end_time|localtime }}</p>
+        <p><strong>Current Time:</strong> {{ now }}</p>
 
-<div>
-    <h1>{{auction.product.name}}</h1>
-    <h2>Seller: <a href="{% url 'userProfile' auction.product.owner.id %}">{{ auction.product.owner.username }}</a></h2>
-    <p>Description: {{ auction.product.description }}</p>
-    <p>Status :{{ auction.status }}</p>
-    <br>
-    <p>Base Price: {{auction.product.base_price}}</p>
-    <p>Higest Bid: {{auction.higest_bid}}</p>
-    <br>
-    <p>Auction Start: {{ auction.start_time|localtime }}</p>
-    <p>Auction End: {{ auction.end_time|localtime }}</p>
-    <p>Current time: {{ now }}</p>
-
-    <br>
-    {% if request.user.is_authenticated %}
-        {% if auction.id in watched_auctions_ids %}
-            <a href="{% url 'remove_from_watchlist' auction.id %}">Remove from Watchlist</a>
-        {% else %}
-            <a href="{% url 'add_to_watchlist' auction.id %}">Add to Watchlist</a>
+        {% if request.user.is_authenticated %}
+            {% if auction.id in watched_auctions_ids %}
+                <a href="{% url 'remove_from_watchlist' auction.id %}" class="btn btn-outline-danger btn-sm">Remove from Watchlist</a>
+            {% else %}
+                <a href="{% url 'add_to_watchlist' auction.id %}" class="btn btn-outline-primary btn-sm">Add to Watchlist</a>
+            {% endif %}
         {% endif %}
-    {% endif %}
-</div>
+    </div>
 
-<div>
     {% if request.user == auction.winner and now >= auction.end_time %}
-    {% if form %}
-        <h3>Leave a Review</h3>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" name="review_submit">Submit Review</button>
-        </form>
-    {% else %}
-        <p>You have already submitted a review for this auction.</p>
-    {% endif %}
-    {% endif %}
-</div>
-
-<div>
-    <h2>Item Images</h2>
-    <p>Image Count: {{ auction.product.images.count }}</p>
-    {% for image in auction.product.images.all %}
-            <img src="{{ image.image.url }}" alt="Product Image" width="200">
-        {% empty %}
-            <p>No images available.</p>
-    {% endfor %}
-</div>
-
-<div>
-    {% if request.user.is_authenticated %}
-        {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
-            <form method="POST", action="">
-                {% csrf_token %}
-                <label for="bid">Your Bid:</label>
-                <input type="number" name="bid_amount" id="bid" step="0.01" placeholder="Enter Bid Amount" required>
-                <button type="submit" value="Submit" name="bid_submit">Place Bid</button>
-            </form>
-        {% endif %}
-    {% endif %}
-</div>
-
-<div>
-    {% if auction.winner == request.user and auction.end_time < now %}
-    {% if not auction.is_paid and not auction.is_delivered %}
-        <form method="POST" action="{% url 'make_payment' auction.id %}">
-            {% csrf_token %}
-            <button type="submit">Pay Now</button>
-        </form>
-    {% elif not auction.is_delivered %}
-        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
-            {% csrf_token %}
-            <button type="submit">Mark as Received</button>
-        </form>
-    {% else %}
-        <p>You have completed this purchase and confirmed delivery.</p>
-    {% endif %}
-    {% endif %}
-
-</div>
-
-<div>
-    <h2>Bid History</h2>
-    {% for bid in bids %}
-        <div>
-            <small>@{{ bid.bidder.username }} - {{ bid.bid_time|timesince }} ago</small>
-            <p>Bid Amount: {{ bid.bid_amount }}</p>
-            <hr>
+        <div class="card p-3 mt-4 shadow-sm">
+            {% if form %}
+                <h4>Leave a Review</h4>
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success mt-2" name="review_submit">Submit Review</button>
+                </form>
+            {% else %}
+                <p>You have already submitted a review for this auction.</p>
+            {% endif %}
         </div>
-    {% empty %}
-        <p>No bids yet. Be the first to bid!</p>
-    {% endfor %}
+    {% endif %}
+
+    <div class="mt-4">
+        <h4>Item Images</h4>
+        <div class="row">
+            {% for image in auction.product.images.all %}
+                <div class="col-md-3 mb-3">
+                    <img src="{{ image.image.url }}" class="img-thumbnail" alt="Product Image">
+                </div>
+            {% empty %}
+                <p>No images available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if request.user.is_authenticated and now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
+        <div class="card p-3 mt-4 shadow-sm">
+            <h4>Place Your Bid</h4>
+            <form method="POST" action="">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="number" name="bid_amount" class="form-control" step="0.01" placeholder="Enter Bid Amount" required>
+                </div>
+                <button type="submit" name="bid_submit" class="btn btn-primary">Place Bid</button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if auction.winner == request.user and auction.end_time < now %}
+        <div class="card p-3 mt-4 shadow-sm">
+            {% if not auction.is_paid and not auction.is_delivered %}
+                <form method="POST" action="{% url 'make_payment' auction.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">Pay Now</button>
+                </form>
+            {% elif not auction.is_delivered %}
+                <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-info">Mark as Received</button>
+                </form>
+            {% else %}
+                <p class="text-success">You have completed this purchase and confirmed delivery.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="mt-5">
+        <h4>Bid History</h4>
+        {% for bid in bids %}
+            <div class="border-bottom py-2">
+                <small class="text-muted">@{{ bid.bidder.username }} - {{ bid.bid_time|timesince }} ago</small>
+                <p class="mb-0">Bid Amount: ₹{{ bid.bid_amount }}</p>
+            </div>
+        {% empty %}
+            <p>No bids yet. Be the first to bid!</p>
+        {% endfor %}
+    </div>
+
     {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
+        <ul class="mt-3">
+            {% for message in messages %}
+                <li class="text-{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
     {% endif %}
 </div>
 
-
+{% endblock %}

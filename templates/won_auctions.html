@@ -1,16 +1,30 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
+{% block content %}
 
-<h2>Auctions You've Won</h2>
+<div class="container mt-5">
+    <h2 class="mb-4">Auctions You've Won</h2>
 
-{% if won_auctions %}
-    {% for auction in won_auctions %}
-        <div>
-            <h3><a href="{% url 'item' auction.id %}">{{ auction.product.name }}</a></h3>
-            <p>End Time: {{ auction.end_time }}</p>
-            <p>Winning Bid: {{ auction.higest_bid }}</p>
-            <hr>
-        </div>
-    {% endfor %}
-{% else %}
-    <p>You haven't won any auctions yet.</p>
-{% endif %}
+    {% if won_auctions %}
+        {% for auction in won_auctions %}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">
+                            {{ auction.product.name }}
+                        </a>
+                    </h5>
+                    <p class="card-text mb-1">
+                        <strong>End Time:</strong> {{ auction.end_time|date:"M d, Y H:i" }}
+                    </p>
+                    <p class="card-text">
+                        <strong>Winning Bid:</strong> ₹{{ auction.higest_bid }}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">You haven't won any auctions yet.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

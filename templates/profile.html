@@ -1,38 +1,47 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
+{% block content %}
 
-<div>
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="display-5">{{ user.username }}</h1>
+        {% if request.user == user %}
+            <a href="{% url 'won_auctions' request.user.id %}" class="btn btn-outline-primary btn-sm mt-2">
+                View Your Won Auctions
+            </a>
+        {% endif %}
+    </div>
 
-    <h1>{{ user.username }}</h1>
-
-    {% if request.user == user %}   
-        <a href="{% url 'won_auctions' request.user.id %}">View Your Won Auctions</a>
-    {% endif %}
-
-
-    <div>
-        <h2>Auctions</h2>
-        {% for auction in auction %}
-            <a href='/item/{{auction.id}}'>{{auction.product.name}}</a>
-            <br>
-            <p>Higest Bid: {{ auction.higest_bid }}</p>
-            <br>
-            <p>Status: {{ auction.status }}</p>
-            <hr>
+    <div class="mb-5">
+        <h3 class="mb-3">Auctions by {{ user.username }}</h3>
+        <div class="list-group">
+            {% for auction in auction %}
+                <a href="{% url 'item' auction.id %}" class="list-group-item list-group-item-action">
+                    <h5 class="mb-1">{{ auction.product.name }}</h5>
+                    <p class="mb-1">Highest Bid: ₹{{ auction.higest_bid }}</p>
+                    <small>Status: {{ auction.status }}</small>
+                </a>
             {% empty %}
-                <p>No Auctions Placed</p>
-        {% endfor %}
+                <div class="text-muted">No Auctions Placed</div>
+            {% endfor %}
+        </div>
     </div>
 
     <div>
-        <h3>Seller Reviews:</h3>
+        <h3 class="mb-3">Seller Reviews</h3>
         {% for review in reviews %}
-            <p>Auction: <a href='/item/{{review.auction.id}}'>{{review.auction}}</a> </p>
-            <p><strong>Rating:</strong> {{ review.rating }} ⭐</p>
-            <p><strong>Comment:</strong> {{ review.comment }}</p>
-            <hr>
-            {% empty %}
-                <p>No reviews yet.</p>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <p class="mb-1"><strong>Auction:</strong> 
+                        <a href="{% url 'item' review.auction.id %}">{{ review.auction }}</a>
+                    </p>
+                    <p class="mb-1"><strong>Rating:</strong> {{ review.rating }} ⭐</p>
+                    <p class="mb-0"><strong>Comment:</strong> {{ review.comment }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-muted">No reviews yet.</div>
         {% endfor %}
     </div>
-
 </div>
+
+{% endblock %}
