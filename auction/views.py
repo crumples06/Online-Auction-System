@@ -256,7 +256,20 @@ def userProfile(request, pk):
     seller = get_object_or_404(AuctionUser, user=user)
     reviews = Review.objects.filter(seller=user).order_by('-created_at')
     auction = user.auction_selling.all().order_by('-start_time')
-    context = {'user':user, 'auction':auction, 'reviews':reviews, 'seller':seller}
+    
+    # Calculate average rating
+    avg_rating = 0
+    if reviews.exists():
+        total_rating = sum(review.rating for review in reviews)
+        avg_rating = round(total_rating / reviews.count(), 1)
+    
+    context = {
+        'user': user, 
+        'auction': auction, 
+        'reviews': reviews, 
+        'seller': seller,
+        'avg_rating': avg_rating
+    }
     return render(request, 'profile.html', context)
 
 

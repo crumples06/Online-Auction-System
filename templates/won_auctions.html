@@ -2,6 +2,20 @@
 
 {% block title %}Auctions You've Won - BidBazaar{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Override for nav pills to ensure visibility */
+    .nav-pills .nav-link {
+        color: #212529 !important; /* Dark text color */
+        font-weight: 500;
+    }
+    .nav-pills .nav-link.active {
+        color: white !important;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -166,7 +180,14 @@
                 {% endif %}
                 {% endfor %}
                 
-                {% if not won_auctions|selectattr:"is_paid"|rejectattr:"is_paid"|list|length %}
+                {% with pending_payment_count=0 %}
+                {% for auction in won_auctions %}
+                    {% if not auction.is_paid %}
+                        {% with pending_payment_count=pending_payment_count|add:1 %}{% endwith %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pending_payment_count == 0 %}
                 <div class="col-12">
                     <div class="text-center py-5 my-4 bg-light rounded">
                         <i class="fas fa-check-circle fa-4x text-muted mb-3"></i>
@@ -175,6 +196,7 @@
                     </div>
                 </div>
                 {% endif %}
+                {% endwith %}
             </div>
         </div>
         
@@ -222,7 +244,14 @@
                 {% endif %}
                 {% endfor %}
                 
-                {% if not won_auctions|selectattr:"is_paid"|selectattr:"is_delivered"|rejectattr:"is_delivered"|list|length %}
+                {% with shipping_count=0 %}
+                {% for auction in won_auctions %}
+                    {% if auction.is_paid and not auction.is_delivered %}
+                        {% with shipping_count=shipping_count|add:1 %}{% endwith %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if shipping_count == 0 %}
                 <div class="col-12">
                     <div class="text-center py-5 my-4 bg-light rounded">
                         <i class="fas fa-truck fa-4x text-muted mb-3"></i>
@@ -231,6 +260,7 @@
                     </div>
                 </div>
                 {% endif %}
+                {% endwith %}
             </div>
         </div>
         
@@ -286,15 +316,23 @@
                 {% endif %}
                 {% endfor %}
                 
-                {% if not won_auctions|selectattr:"is_paid"|selectattr:"is_delivered"|list|length %}
+                {% with completed_count=0 %}
+                {% for auction in won_auctions %}
+                    {% if auction.is_paid and auction.is_delivered %}
+                        {% with completed_count=completed_count|add:1 %}{% endwith %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if completed_count == 0 %}
                 <div class="col-12">
                     <div class="text-center py-5 my-4 bg-light rounded">
                         <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-                        <h4>No Completed Transactions</h4>
-                        <p class="text-muted">You have no completed transactions yet.</p>
+                        <h4>No Completed Auctions</h4>
+                        <p class="text-muted">You don't have any completed auction transactions yet.</p>
                     </div>
                 </div>
                 {% endif %}
+                {% endwith %}
             </div>
         </div>
     </div>

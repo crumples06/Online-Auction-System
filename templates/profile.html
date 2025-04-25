@@ -2,6 +2,21 @@
 
 {% block title %}{{ user.username }}'s Profile - BidBazaar{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Override for nav tabs to ensure visibility */
+    .nav-tabs .nav-link {
+        color: #212529 !important; /* Dark text color */
+        font-weight: 500;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd !important; /* Primary color for active tab */
+        font-weight: 600;
+        border-bottom: 2px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Profile Header -->
 <div class="profile-header mb-4">
@@ -79,16 +94,9 @@
                 <div class="card-body text-center">
                     <div class="display-4 text-warning mb-2">
                         {% if reviews %}
-                        {% with total=0 %}
-                        {% for review in reviews %}
-                        {% with total=total|add:review.rating %}{% endwith %}
-                        {% endfor %}
-                        {{ total|divisibleby:reviews|length|default:"0" }}
+                            {{ avg_rating }}
                         {% else %}
-                        0
-                        {% endwith %}
-                        {% else %}
-                        0
+                            0
                         {% endif %}
                     </div>
                     <h5>Average Rating</h5>
@@ -100,18 +108,18 @@
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="auctions-tab" data-bs-toggle="tab" data-bs-target="#auctions" type="button" role="tab" aria-controls="auctions" aria-selected="true">
+            <button class="nav-link active text-dark" id="auctions-tab" data-bs-toggle="tab" data-bs-target="#auctions" type="button" role="tab" aria-controls="auctions" aria-selected="true">
                 <i class="fas fa-gavel me-2"></i>Auctions
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
+            <button class="nav-link text-dark" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">
                 <i class="fas fa-star me-2"></i>Reviews
             </button>
         </li>
         {% if request.user == user %}
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
+            <button class="nav-link text-dark" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
                 <i class="fas fa-cog me-2"></i>Settings
             </button>
         </li>
