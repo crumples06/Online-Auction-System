@@ -1,105 +1,504 @@
+{% extends 'base.html' %}
 {% load tz %}
 
-{% include 'navbar.html' %}
+{% block title %}{{ auction.product.name }} - BidBazaar{% endblock %}
 
-<div>
-    <h1>{{auction.product.name}}</h1>
-    <h2>Seller: <a href="{% url 'userProfile' auction.product.owner.id %}">{{ auction.product.owner.username }}</a></h2>
-    <p>Description: {{ auction.product.description }}</p>
-    <p>Status :{{ auction.status }}</p>
-    <br>
-    <p>Base Price: {{auction.product.base_price}}</p>
-    <p>Higest Bid: {{auction.higest_bid}}</p>
-    <br>
-    <p>Auction Start: {{ auction.start_time|localtime }}</p>
-    <p>Auction End: {{ auction.end_time|localtime }}</p>
-    <p>Current time: {{ now }}</p>
-
-    <br>
-    {% if request.user.is_authenticated %}
-        {% if auction.id in watched_auctions_ids %}
-            <a href="{% url 'remove_from_watchlist' auction.id %}">Remove from Watchlist</a>
-        {% else %}
-            <a href="{% url 'add_to_watchlist' auction.id %}">Add to Watchlist</a>
-        {% endif %}
-    {% endif %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'auctions' %}">Auctions</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ auction.product.name }}</li>
+            </ol>
+        </nav>
+    </div>
 </div>
 
-<div>
-    {% if request.user == auction.winner and now >= auction.end_time %}
-    {% if form %}
-        <h3>Leave a Review</h3>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" name="review_submit">Submit Review</button>
-        </form>
-    {% else %}
-        <p>You have already submitted a review for this auction.</p>
-    {% endif %}
-    {% endif %}
-</div>
-
-<div>
-    <h2>Item Images</h2>
-    <p>Image Count: {{ auction.product.images.count }}</p>
-    {% for image in auction.product.images.all %}
-            <img src="{{ image.image.url }}" alt="Product Image" width="200">
-        {% empty %}
-            <p>No images available.</p>
-    {% endfor %}
-</div>
-
-<div>
-    {% if request.user.is_authenticated %}
-        {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
-            <form method="POST", action="">
-                {% csrf_token %}
-                <label for="bid">Your Bid:</label>
-                <input type="number" name="bid_amount" id="bid" step="0.01" placeholder="Enter Bid Amount" required>
-                <button type="submit" value="Submit" name="bid_submit">Place Bid</button>
-            </form>
-        {% endif %}
-    {% endif %}
-</div>
-
-<div>
-    {% if auction.winner == request.user and auction.end_time < now %}
-    {% if not auction.is_paid and not auction.is_delivered %}
-        <form method="POST" action="{% url 'make_payment' auction.id %}">
-            {% csrf_token %}
-            <button type="submit">Pay Now</button>
-        </form>
-    {% elif not auction.is_delivered %}
-        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
-            {% csrf_token %}
-            <button type="submit">Mark as Received</button>
-        </form>
-    {% else %}
-        <p>You have completed this purchase and confirmed delivery.</p>
-    {% endif %}
-    {% endif %}
-
-</div>
-
-<div>
-    <h2>Bid History</h2>
-    {% for bid in bids %}
-        <div>
-            <small>@{{ bid.bidder.username }} - {{ bid.bid_time|timesince }} ago</small>
-            <p>Bid Amount: {{ bid.bid_amount }}</p>
-            <hr>
+<div class="row">
+    <!-- Product Images Gallery -->
+    <div class="col-lg-6 mb-4">
+        {% if auction.product.images.count > 0 %}
+        <div id="productCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
+            <div class="carousel-inner rounded shadow">
+                {% for image in auction.product.images.all %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ auction.product.name }}" style="height: 400px; object-fit: contain;">
+                </div>
+                {% endfor %}
+            </div>
+            {% if auction.product.images.count > 1 %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+            {% endif %}
         </div>
-    {% empty %}
-        <p>No bids yet. Be the first to bid!</p>
-    {% endfor %}
-    {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
-    {% endif %}
+        
+        {% if auction.product.images.count > 1 %}
+        <div class="row g-2">
+            {% for image in auction.product.images.all %}
+            <div class="col-3">
+                <img src="{{ image.image.url }}" class="img-thumbnail" alt="Thumbnail" data-bs-target="#productCarousel" data-bs-slide-to="{{ forloop.counter0 }}" style="height: 80px; object-fit: cover; cursor: pointer;">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+            <div class="text-center text-muted">
+                <i class="fas fa-image fa-4x mb-3"></i>
+                <p>No images available</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Product Details & Bidding -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h1 class="mb-0">{{ auction.product.name }}</h1>
+                    {% if request.user.is_authenticated %}
+                        {% if auction.id in watched_auctions_ids %}
+                        <a href="{% url 'remove_from_watchlist' auction.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-heart me-1"></i> Remove from Watchlist
+                        </a>
+                        {% else %}
+                        <a href="{% url 'add_to_watchlist' auction.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="far fa-heart me-1"></i> Add to Watchlist
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                
+                <p class="text-muted mb-4">{{ auction.product.description }}</p>
+                
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <h5>Starting Price</h5>
+                        <p class="fs-5">₹{{ auction.product.base_price }}</p>
+                    </div>
+                    <div class="col-6">
+                        <h5>Current Bid</h5>
+                        <p class="fs-3 fw-bold text-primary">₹{{ auction.higest_bid }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="bg-light p-3 rounded">
+                            <h6>Auction Starts</h6>
+                            <p class="mb-0">{{ auction.start_time|localtime }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <h6>Auction Ends</h6>
+                            <p class="mb-0">{{ auction.end_time|localtime }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Time Remaining</h5>
+                    <div class="auction-timer-container p-3 bg-light rounded text-center">
+                        <div id="auctionTimer" class="fs-3 fw-bold" data-end-time="{{ auction.end_time|date:'c' }}">
+                            {{ auction.end_time|timeuntil }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Seller Information</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <img src="https://via.placeholder.com/50" alt="User Avatar" class="rounded-circle" width="50" height="50">
+                        </div>
+                        <div>
+                            <h6 class="mb-0">
+                                <a href="{% url 'userProfile' auction.seller.id %}" class="text-decoration-none">{{ auction.seller.username }}</a>
+                            </h6>
+                            <div class="text-muted small">
+                                <i class="fas fa-star text-warning"></i> 4.8 (56 reviews)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if request.user.is_authenticated %}
+                    {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
+                    <div class="card border-primary mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Place Your Bid</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="bid" class="form-label">Your Bid Amount (₹)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" name="bid_amount" id="bid" step="0.01" min="{{ auction.higest_bid|add:'0.01' }}" class="form-control" placeholder="Enter amount higher than current bid" required>
+                                    </div>
+                                    <div class="form-text">Minimum bid: ₹{{ auction.higest_bid|add:'0.01' }}</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" name="bid_submit">
+                                    <i class="fas fa-gavel me-2"></i> Place Bid
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% elif now < auction.start_time %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> This auction hasn't started yet.
+                    </div>
+                    {% elif now >= auction.end_time %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i> This auction has ended.
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Please <a href="{% url 'login' %}">log in</a> to place a bid.
+                </div>
+                {% endif %}
+                
+                <!-- Winner Actions -->
+                {% if auction.winner == request.user and auction.end_time < now %}
+                <div class="card border-success mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Congratulations! You won this auction.</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if not auction.is_paid and not auction.is_delivered %}
+                        <p>Complete your purchase by making the payment.</p>
+                        <form method="POST" action="{% url 'make_payment' auction.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-credit-card me-2"></i> Pay Now (₹{{ auction.higest_bid }})
+                            </button>
+                        </form>
+                        {% elif not auction.is_delivered %}
+                        <p>Your payment has been processed. Please confirm when you receive the item.</p>
+                        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success w-100">
+                                <i class="fas fa-check-circle me-2"></i> Confirm Delivery
+                            </button>
+                        </form>
+                        {% else %}
+                        <p class="mb-0">
+                            <i class="fas fa-check-circle text-success me-2"></i> You have completed this purchase and confirmed delivery.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- AI Price Recommendation -->
+                <div class="alert alert-info d-flex align-items-center">
+                    <i class="fas fa-robot fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading">AI Price Recommendation</h6>
+                        <p class="mb-0">Based on similar items, a fair price range is ₹10,500 - ₹14,200.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Bid History -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Bid History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bidder</th>
+                                <th>Amount</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bid in bids %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://via.placeholder.com/36" alt="User Avatar" class="rounded-circle me-2" width="36" height="36">
+                                        <div>
+                                            {{ bid.bidder.username }}
+                                            {% if bid.bidder == auction.winner %}
+                                            <span class="badge bg-success ms-1">Winner</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">₹{{ bid.bid_amount }}</td>
+                                <td>{{ bid.bid_time|timesince }} ago</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <i class="fas fa-gavel fa-2x mb-3 text-muted"></i>
+                                    <p class="mb-0">No bids yet. Be the first to bid!</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Chat Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Auction Chat</h5>
+                <span class="badge rounded-pill bg-success">Live</span>
+            </div>
+            <div class="card-body">
+                <div class="chat-container mb-3">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                    <!-- Chat messages would be loaded here -->
+                    <!-- Example messages:
+                    <div class="chat-message other">
+                        <div class="d-flex align-items-center mb-1">
+                            <small class="fw-bold">John Doe</small>
+                            <small class="text-muted ms-2">2 min ago</small>
+                        </div>
+                        <div>Does this item have a warranty?</div>
+                    </div>
+                    <div class="chat-message own">
+                        <div class="d-flex align-items-center justify-content-end mb-1">
+                            <small class="fw-bold">You</small>
+                            <small class="text-muted ms-2">1 min ago</small>
+                        </div>
+                        <div>Yes, it has a 1-year manufacturer warranty.</div>
+                    </div>
+                    -->
+                </div>
+                
+                {% if request.user.is_authenticated %}
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Type your message here..." id="chatMessage">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i> Please <a href="{% url 'login' %}">log in</a> to participate in the chat.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Review Section -->
+        {% if request.user == auction.winner and now >= auction.end_time %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Leave a Review</h5>
+            </div>
+            <div class="card-body">
+                {% if form %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Rating</label>
+                        <div class="rating-select">
+                            <div class="btn-group" role="group">
+                                {% for i in "12345" %}
+                                <input type="radio" class="btn-check" name="rating" id="rating{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
+                                <label class="btn btn-outline-warning" for="rating{{ i }}">{{ i }}</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_comment" class="form-label">Your Review</label>
+                        <textarea name="comment" id="id_comment" class="form-control" rows="3" placeholder="Share your experience with this seller"></textarea>
+                    </div>
+                    <button type="submit" name="review_submit" class="btn btn-primary w-100">
+                        <i class="fas fa-star me-2"></i> Submit Review
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-check-circle me-2"></i> You have already submitted a review for this auction.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Similar Auctions -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Similar Auctions</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <!-- This would be populated with actual similar auctions -->
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex">
+                            <img src="https://via.placeholder.com/80" alt="Product" class="me-3" width="80" height="80">
+                            <div>
+                                <h6 class="mb-1">Vintage Watch Collection</h6>
+                                <p class="mb-1 text-primary">Current Bid: ₹8,500</p>
+                                <small class="text-muted">Ends in 3 days</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex">
+                            <img src="https://via.placeholder.com/80" alt="Product" class="me-3" width="80" height="80">
+                            <div>
+                                <h6 class="mb-1">Professional Camera Lens</h6>
+                                <p class="mb-1 text-primary">Current Bid: ₹12,300</p>
+                                <small class="text-muted">Ends in 1 day</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex">
+                            <img src="https://via.placeholder.com/80" alt="Product" class="me-3" width="80" height="80">
+                            <div>
+                                <h6 class="mb-1">Antique Wooden Clock</h6>
+                                <p class="mb-1 text-primary">Current Bid: ₹5,200</p>
+                                <small class="text-muted">Ends in 5 hours</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    {% for message in messages %}
+    <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Enable all toasts
+    document.addEventListener('DOMContentLoaded', function() {
+        const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+        const toastList = toastElList.map(function(toastEl) {
+            return new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 }).show();
+        });
+    });
+    
+    // Auction timer countdown
+    function updateAuctionTimer() {
+        const timerElement = document.getElementById('auctionTimer');
+        if (!timerElement) return;
+        
+        const endTime = new Date(timerElement.getAttribute('data-end-time'));
+        const now = new Date();
+        
+        let diff = Math.floor((endTime - now) / 1000);
+        
+        if (diff <= 0) {
+            timerElement.innerHTML = '<span class="text-danger">Auction Ended</span>';
+            return;
+        }
+        
+        const days = Math.floor(diff / 86400);
+        diff -= days * 86400;
+        const hours = Math.floor(diff / 3600);
+        diff -= hours * 3600;
+        const minutes = Math.floor(diff / 60);
+        diff -= minutes * 60;
+        const seconds = diff;
+        
+        let timerHTML = '';
+        
+        if (days > 0) {
+            timerHTML += `<span class="timer-unit">${days}d</span> `;
+        }
+        
+        timerHTML += `
+            <span class="timer-unit">${hours.toString().padStart(2, '0')}h</span> :
+            <span class="timer-unit">${minutes.toString().padStart(2, '0')}m</span> :
+            <span class="timer-unit">${seconds.toString().padStart(2, '0')}s</span>
+        `;
+        
+        timerElement.innerHTML = timerHTML;
+        
+        // Add pulsing effect when less than 1 hour remains
+        if (days === 0 && hours < 1) {
+            timerElement.classList.add('text-danger');
+            if (days === 0 && hours === 0 && minutes < 5) {
+                timerElement.classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
+            }
+        } else {
+            timerElement.classList.remove('text-danger', 'animate__animated', 'animate__pulse', 'animate__infinite');
+        }
+    }
+    
+    // Initialize timer and update every second
+    updateAuctionTimer();
+    setInterval(updateAuctionTimer, 1000);
+    
+    // Handle thumbnail clicks for image gallery
+    const thumbnails = document.querySelectorAll('.img-thumbnail');
+    thumbnails.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const slideIndex = this.getAttribute('data-bs-slide-to');
+            const carousel = new bootstrap.Carousel(document.getElementById('productCarousel'));
+            carousel.to(parseInt(slideIndex));
+        });
+    });
+    
+    // Chat functionality (placeholder for Socket.IO implementation)
+    const chatForm = document.getElementById('chatForm');
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('chatMessage');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                // This would be replaced by actual Socket.IO message sending
+                showToast('Chat functionality will be implemented with Socket.IO', 'info');
+                messageInput.value = '';
+            }
+        });
+    }
+</script>
+{% endblock %}
 
 

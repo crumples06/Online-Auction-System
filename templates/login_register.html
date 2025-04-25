@@ -1,39 +1,225 @@
+{% extends 'base.html' %}
 
-    {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
-    {% endif %}
+{% block title %}
+{% if page == 'login' %}Login{% else %}Register{% endif %} - BidBazaar
+{% endblock %}
 
-{% if page == 'login' %}
-<div>
-    <form action="" method="POST">
-        {% csrf_token %}
-        
-        <label>Username:</label>
-        <input type="text" name="username" placeholder="Enter Username">
+{% block extra_css %}
+<style>
+    .auth-form-container {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        margin: 1.5rem 0;
+    }
+    
+    .auth-divider::before,
+    .auth-divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .auth-divider span {
+        padding: 0 1rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .social-login-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .social-login-button i {
+        margin-right: 0.5rem;
+        font-size: 1.25rem;
+    }
+    
+    .google-login {
+        background-color: #fff;
+        color: #333;
+        border: 1px solid #dee2e6;
+    }
+    
+    .google-login:hover {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+    
+    .facebook-login {
+        background-color: #1877f2;
+        color: white;
+        border: none;
+    }
+    
+    .facebook-login:hover {
+        background-color: #166fe5;
+        color: white;
+    }
+    
+    .auth-image {
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
 
-        <label>Password:</label>
-        <input type="password" name="password" placeholder="Enter Password">
-
-        <input type="submit" value="Login">
-    </form>
-
-    <p>Haven't signed up yet?</p>
-    <a href="{% url 'register' %}">Sign Up</a>
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-lg-6 d-none d-lg-block">
+            <img src="https://images.unsplash.com/photo-1597600159211-d6c104f408d1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80" class="img-fluid shadow auth-image" alt="Authentication">
+        </div>
+        <div class="col-lg-6">
+            <div class="auth-form-container">
+                <div class="auth-header">
+                    <h1 class="mb-4">
+                        {% if page == 'login' %}Welcome Back{% else %}Join BidBazaar{% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if page == 'login' %}
+                        Login to access your account and manage your auctions
+                        {% else %}
+                        Create an account to start bidding on unique items
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        {% if page == 'login' %}
+                        <form action="" method="POST">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                                    <label class="form-check-label" for="rememberMe">Remember me</label>
+                                </div>
+                                <a href="#" class="text-decoration-none">Forgot password?</a>
+                            </div>
+                            
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                </button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <form action="" method="POST">
+                            {% csrf_token %}
+                            
+                            {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field.errors }}
+                                {% if field.name == 'username' %}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    {{ field }}
+                                </div>
+                                {% elif field.name == 'password1' or field.name == 'password2' %}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    {{ field }}
+                                </div>
+                                {% elif field.name == 'email' %}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    {{ field }}
+                                </div>
+                                {% else %}
+                                {{ field }}
+                                {% endif %}
+                                
+                                {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i> Create Account
+                                </button>
+                            </div>
+                        </form>
+                        {% endif %}
+                        
+                        <div class="auth-divider">
+                            <span>or continue with</span>
+                        </div>
+                        
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="#" class="social-login-button google-login">
+                                    <i class="fab fa-google"></i> Google
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="#" class="social-login-button facebook-login">
+                                    <i class="fab fa-facebook-f"></i> Facebook
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    {% if page == 'login' %}
+                    <p class="mb-0">Don't have an account? <a href="{% url 'register' %}" class="text-decoration-none fw-bold">Sign up</a></p>
+                    {% else %}
+                    <p class="mb-0">Already have an account? <a href="{% url 'login' %}" class="text-decoration-none fw-bold">Log in</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-{% else %}
-<div>
-    <form action="" method="POST">
-        {% csrf_token %}
-        {{form.as_p}}
-        <input type="submit" value="Register">
-    </form>
-
-    <p>Already signed in?</p>
-    <a href="{% url 'login' %}">Login</a>
-</div>
-{% endif %}
+{% endblock %}

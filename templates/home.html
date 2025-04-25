@@ -1,10 +1,347 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
 
-<div>
-    <a href="{% url 'add_product' %}">Add Product</a>
+{% block title %}BidBazaar - Online Auction Platform{% endblock %}
 
-    <h1>Home Template </h1>
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 mb-5 bg-light rounded-3 shadow-sm">
+    <div class="container px-4">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="fw-bold mb-3">Discover, Bid, Win</h1>
+                <p class="lead mb-4">India's premier online auction marketplace. Find unique items or sell your valuables in a secure environment.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'auctions' %}" class="btn btn-primary btn-lg px-4">Browse Auctions</a>
+                    {% if request.user.is_authenticated %}
+                    <a href="{% url 'add_product' %}" class="btn btn-outline-secondary btn-lg px-4">Sell an Item</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg px-4">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="https://images.unsplash.com/photo-1558454431-d8927500bd33?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Auction" class="img-fluid rounded-3 shadow">
+            </div>
+        </div>
+    </div>
+</section>
 
-    <a href="{% url 'auctions' %}">Auctions</a>
-</div>
+<!-- Featured Auctions -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Featured Auctions</h2>
+        <a href="{% url 'auctions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    
+    <div class="row">
+        <!-- This would be a loop in the actual implementation -->
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=989&q=80" class="card-img-top product-image" alt="Smart Watch">
+                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
+                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
+                        <i class="far fa-heart fs-5"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Smart Watch Pro</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Current Bid</span>
+                        <span class="current-bid">₹12,500</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Ends in</span>
+                        <span class="auction-timer">2h 35m</span>
+                    </div>
+                    <a href="#" class="btn btn-primary w-100">View Auction</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Sneakers">
+                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
+                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
+                        <i class="far fa-heart fs-5"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Limited Edition Sneakers</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Current Bid</span>
+                        <span class="current-bid">₹8,200</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Ends in</span>
+                        <span class="auction-timer">5h 15m</span>
+                    </div>
+                    <a href="#" class="btn btn-primary w-100">View Auction</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Camera">
+                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
+                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon active" data-bs-toggle="tooltip" title="Remove from Watchlist">
+                        <i class="fas fa-heart fs-5"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Vintage Camera</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Current Bid</span>
+                        <span class="current-bid">₹15,750</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Ends in</span>
+                        <span class="auction-timer">1d 3h</span>
+                    </div>
+                    <a href="#" class="btn btn-primary w-100">View Auction</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1504274066651-8d31a536b11a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Antique Clock">
+                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
+                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
+                        <i class="far fa-heart fs-5"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Antique Wooden Clock</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Current Bid</span>
+                        <span class="current-bid">₹7,300</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Ends in</span>
+                        <span class="auction-timer">8h 45m</span>
+                    </div>
+                    <a href="#" class="btn btn-primary w-100">View Auction</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="mb-5">
+    <h2 class="mb-4">Popular Categories</h2>
+    <div class="row g-4">
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="#" class="text-decoration-none">
+                <div class="card bg-dark text-white h-100">
+                    <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img product-image" alt="Electronics">
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <h5 class="card-title mb-0">Electronics</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="#" class="text-decoration-none">
+                <div class="card bg-dark text-white h-100">
+                    <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img product-image" alt="Fashion">
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <h5 class="card-title mb-0">Fashion</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="#" class="text-decoration-none">
+                <div class="card bg-dark text-white h-100">
+                    <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1349&q=80" class="card-img product-image" alt="Home & Garden">
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <h5 class="card-title mb-0">Home & Garden</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="#" class="text-decoration-none">
+                <div class="card bg-dark text-white h-100">
+                    <img src="https://images.unsplash.com/photo-1577733966973-d680bffd2e80?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img product-image" alt="Collectibles">
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <h5 class="card-title mb-0">Collectibles</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="mb-5">
+    <div class="bg-light p-4 p-md-5 rounded-3">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row text-center">
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="bg-white rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-search fa-2x text-primary"></i>
+                </div>
+                <h4>Find Items</h4>
+                <p class="text-muted">Browse through our diverse range of products available for auction.</p>
+            </div>
+            <div class="col-md-4 mb-4 mb-md-0">
+                <div class="bg-white rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-gavel fa-2x text-primary"></i>
+                </div>
+                <h4>Place Your Bid</h4>
+                <p class="text-muted">Participate in real-time auctions with our secure bidding system.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="bg-white rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-trophy fa-2x text-primary"></i>
+                </div>
+                <h4>Win & Collect</h4>
+                <p class="text-muted">Win the auction and pay securely through our trusted payment system.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="mb-5">
+    <h2 class="mb-4">What Our Users Say</h2>
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating-stars me-2">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span>(5.0)</span>
+                </div>
+                <p class="card-text mb-4">"BidBazaar has transformed how I buy collectibles. The platform is intuitive, and the auction process is transparent. Highly recommended!"</p>
+                <div class="d-flex align-items-center mt-auto">
+                    <div class="flex-shrink-0">
+                        <img src="https://randomuser.me/api/portraits/men/41.jpg" alt="User" class="rounded-circle" width="50" height="50">
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Rajesh Kumar</h6>
+                        <small class="text-muted">Delhi</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating-stars me-2">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <span>(4.5)</span>
+                </div>
+                <p class="card-text mb-4">"I've successfully sold vintage items on this platform. The bidding process attracts serious buyers, and the payment system is secure. Great experience!"</p>
+                <div class="d-flex align-items-center mt-auto">
+                    <div class="flex-shrink-0">
+                        <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" class="rounded-circle" width="50" height="50">
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Priya Sharma</h6>
+                        <small class="text-muted">Mumbai</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating-stars me-2">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span>(5.0)</span>
+                </div>
+                <p class="card-text mb-4">"The live bidding experience on BidBazaar is thrilling! I appreciate the transparency and the real-time updates. Found some amazing electronics at great prices."</p>
+                <div class="d-flex align-items-center mt-auto">
+                    <div class="flex-shrink-0">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" class="rounded-circle" width="50" height="50">
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Arjun Reddy</h6>
+                        <small class="text-muted">Bangalore</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="bg-primary p-5 rounded-3 text-white text-center">
+    <h2 class="mb-3">Ready to Start Bidding?</h2>
+    <p class="lead mb-4">Join thousands of users who buy and sell on India's trusted auction platform.</p>
+    <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'auctions' %}" class="btn btn-light btn-lg px-4">Explore Auctions</a>
+        {% if not request.user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg px-4">Create Account</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add to watchlist functionality
+    document.querySelectorAll('.watchlist-icon').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                this.classList.add('active');
+                showToast('Item added to watchlist', 'success');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                this.classList.remove('active');
+                showToast('Item removed from watchlist', 'info');
+            }
+        });
+    });
+    
+    // Simulated countdown timers for demo
+    function updateTimers() {
+        document.querySelectorAll('.auction-timer').forEach(timer => {
+            // For demo purposes only - in production would use actual time calculations
+            const text = timer.textContent;
+            if (text.includes('h')) {
+                const hours = parseInt(text.split('h')[0]);
+                const mins = parseInt(text.split('h ')[1].split('m')[0]);
+                
+                if (mins > 0) {
+                    timer.textContent = `${hours}h ${mins-1}m`;
+                } else if (hours > 0) {
+                    timer.textContent = `${hours-1}h 59m`;
+                }
+            }
+        });
+    }
+    
+    // Update every minute for demo
+    setInterval(updateTimers, 60000);
+</script>
+{% endblock %}
 

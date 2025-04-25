@@ -1,13 +1,169 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
 
-<h2>My Watchlist</h2>
+{% block title %}My Watchlist - BidBazaar{% endblock %}
 
-{% for item in watchlist_items %}
-    <div>
-        <a href="{% url 'item' item.auction.id %}">{{item.auction.product.name}}</a>
-        <p>Ends on: {{item.auction.end_time}}</p>
-        <a href="{% url 'remove_from_watchlist' item.auction.id %}">Remove</a>
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">My Watchlist</h1>
+            <p class="text-muted">Track auctions you're interested in and never miss a bid.</p>
+        </div>
     </div>
-{% empty %}
-    <p>You have no items in your watchlist</p>
-{% endfor %}
+    
+    {% if watchlist_items %}
+    <div class="row">
+        {% for item in watchlist_items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="position-relative">
+                    {% if item.auction.product.images.first %}
+                    <img src="{{ item.auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ item.auction.product.name }}">
+                    {% else %}
+                    <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                    {% endif %}
+                    
+                    <!-- Auction status badge -->
+                    <span class="badge-live position-absolute top-0 start-0 m-3">
+                        {% if item.auction.status %}
+                            {{ item.auction.status }}
+                        {% else %}
+                            Live
+                        {% endif %}
+                    </span>
+                    
+                    <!-- Remove from watchlist button -->
+                    <a href="{% url 'remove_from_watchlist' item.auction.id %}" class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon active" data-bs-toggle="tooltip" title="Remove from Watchlist">
+                        <i class="fas fa-heart fs-5"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'item' item.auction.id %}" class="text-decoration-none text-dark">{{ item.auction.product.name }}</a>
+                    </h5>
+                    <p class="card-text text-muted small">{{ item.auction.product.description|truncatechars:50 }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Current Bid</span>
+                        <span class="current-bid">₹{{ item.auction.higest_bid }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Ends in</span>
+                        <span class="auction-timer" data-end-time="{{ item.auction.end_time|date:'c' }}">
+                            {{ item.auction.end_time|timeuntil }}
+                        </span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'item' item.auction.id %}" class="btn btn-primary">View Auction</a>
+                        <a href="{% url 'remove_from_watchlist' item.auction.id %}" class="btn btn-outline-danger">
+                            <i class="fas fa-heart-broken me-2"></i> Remove from Watchlist
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <small class="text-muted">
+                        <i class="fas fa-user me-1"></i> Seller: {{ item.auction.seller.username }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="text-center py-5 my-4 bg-light rounded">
+        <i class="far fa-heart fa-4x text-muted mb-3"></i>
+        <h3>Your watchlist is empty</h3>
+        <p class="text-muted mb-4">You haven't added any auctions to your watchlist yet.</p>
+        <a href="{% url 'auctions' %}" class="btn btn-primary">
+            <i class="fas fa-search me-2"></i> Browse Auctions
+        </a>
+    </div>
+    {% endif %}
+    
+    {% if watchlist_items %}
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Watchlist Management</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="mb-0">You're currently tracking <strong>{{ watchlist_items|length }}</strong> auction(s). We'll notify you about new bids and when auctions are ending.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary">
+                            <i class="fas fa-bell me-2"></i> Notification Settings
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="clearWatchlist">
+                            <i class="fas fa-trash me-2"></i> Clear Watchlist
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Enable tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Real-time countdown timers
+    function updateTimers() {
+        document.querySelectorAll('.auction-timer').forEach(timer => {
+            const endTime = new Date(timer.getAttribute('data-end-time'));
+            const now = new Date();
+            
+            let diff = Math.floor((endTime - now) / 1000);
+            
+            if (diff <= 0) {
+                timer.innerHTML = '<span class="text-danger">Ended</span>';
+                return;
+            }
+            
+            const days = Math.floor(diff / 86400);
+            diff -= days * 86400;
+            const hours = Math.floor(diff / 3600);
+            diff -= hours * 3600;
+            const minutes = Math.floor(diff / 60);
+            diff -= minutes * 60;
+            const seconds = diff;
+            
+            let timeStr = '';
+            if (days > 0) {
+                timeStr = `${days}d ${hours}h`;
+            } else if (hours > 0) {
+                timeStr = `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                timeStr = `${minutes}m ${seconds}s`;
+            } else {
+                timeStr = `<span class="text-danger">${seconds}s</span>`;
+            }
+            
+            timer.innerHTML = timeStr;
+        });
+    }
+    
+    // Update countdown every second
+    updateTimers();
+    setInterval(updateTimers, 1000);
+    
+    // Clear watchlist confirmation
+    document.getElementById('clearWatchlist')?.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear your entire watchlist? This action cannot be undone.')) {
+            // This would be replaced with actual clear watchlist functionality
+            showToast('Watchlist cleared successfully', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
+    });
+</script>
+{% endblock %}

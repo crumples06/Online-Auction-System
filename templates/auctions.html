@@ -1,14 +1,253 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
 
+{% block title %}Auctions - BidBazaar{% endblock %}
 
-<h1>Auction Listings </h1>
-
-<div>
-    <div>
-        {% for auction in auction_listings %}
-                <div>
-                    <h5>{{auction.id}} -- <a href='/item/{{auction.id}}'>{{auction.product.name}}</a></h5>
-                </div>
-        {% endfor %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="mb-4">Auction Listings</h1>
     </div>
 </div>
+
+<div class="row">
+    <!-- Sidebar Filters -->
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" placeholder="Enter keywords">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="electronics" id="electronics">
+                            <label class="form-check-label" for="electronics">Electronics</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="fashion" id="fashion">
+                            <label class="form-check-label" for="fashion">Fashion</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="home" id="home">
+                            <label class="form-check-label" for="home">Home & Garden</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="collectibles" id="collectibles">
+                            <label class="form-check-label" for="collectibles">Collectibles</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Price Range</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="number" class="form-control" placeholder="Min" min="0">
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" placeholder="Max" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Auction Status</label>
+                        <select class="form-select">
+                            <option value="all" selected>All Auctions</option>
+                            <option value="live">Live Now</option>
+                            <option value="ending">Ending Soon</option>
+                            <option value="upcoming">Upcoming</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select">
+                            <option value="newest">Newest First</option>
+                            <option value="ending">Ending Soon</option>
+                            <option value="price_low">Price: Low to High</option>
+                            <option value="price_high">Price: High to Low</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Auction Listings -->
+    <div class="col-lg-9">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <p class="mb-0">Showing <strong>{{ auction_listings|length }}</strong> auctions</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary active">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if auction_listings %}
+        <div class="row">
+            {% for auction in auction_listings %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="position-relative">
+                        {% if auction.product.images.first %}
+                        <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                        {% endif %}
+                        
+                        <!-- Auction status badge -->
+                        <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
+                        
+                        <!-- Watchlist button -->
+                        <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-auction-id="{{ auction.id }}" data-bs-toggle="tooltip" title="Add to Watchlist">
+                            <i class="far fa-heart fs-5"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">{{ auction.product.name }}</a>
+                        </h5>
+                        <p class="card-text text-muted small">{{ auction.product.description|truncatechars:50 }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Current Bid</span>
+                            <span class="current-bid">₹{{ auction.higest_bid }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted">Ends</span>
+                            <span class="auction-timer" data-end-time="{{ auction.end_time|date:'c' }}">
+                                {{ auction.end_time|timeuntil }}
+                            </span>
+                        </div>
+                        <a href="{% url 'item' auction.id %}" class="btn btn-primary w-100">View Auction</a>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i> Seller: {{ auction.seller.username }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No auctions available at the moment. Check back later!
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add to watchlist functionality
+    document.querySelectorAll('.watchlist-icon').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const auctionId = this.getAttribute('data-auction-id');
+            const icon = this.querySelector('i');
+            
+            if (icon.classList.contains('far')) {
+                // Add to watchlist
+                fetch(`/watchlist/add/${auctionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        this.classList.add('active');
+                        showToast('Item added to watchlist', 'success');
+                    } else {
+                        showToast('Error adding to watchlist. Please try again.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error: ' + error, 'danger');
+                });
+            } else {
+                // Remove from watchlist
+                fetch(`/watchlist/remove/${auctionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        this.classList.remove('active');
+                        showToast('Item removed from watchlist', 'info');
+                    } else {
+                        showToast('Error removing from watchlist. Please try again.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error: ' + error, 'danger');
+                });
+            }
+        });
+    });
+    
+    // Real-time countdown timers
+    function updateTimers() {
+        document.querySelectorAll('.auction-timer').forEach(timer => {
+            const endTime = new Date(timer.getAttribute('data-end-time'));
+            const now = new Date();
+            
+            let diff = Math.floor((endTime - now) / 1000);
+            
+            if (diff <= 0) {
+                timer.innerHTML = '<span class="text-danger">Ended</span>';
+                return;
+            }
+            
+            const days = Math.floor(diff / 86400);
+            diff -= days * 86400;
+            const hours = Math.floor(diff / 3600);
+            diff -= hours * 3600;
+            const minutes = Math.floor(diff / 60);
+            diff -= minutes * 60;
+            const seconds = diff;
+            
+            let timeStr = '';
+            if (days > 0) {
+                timeStr = `${days}d ${hours}h`;
+            } else if (hours > 0) {
+                timeStr = `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                timeStr = `${minutes}m ${seconds}s`;
+            } else {
+                timeStr = `<span class="text-danger">${seconds}s</span>`;
+            }
+            
+            timer.innerHTML = timeStr;
+        });
+    }
+    
+    // Update countdown every second
+    updateTimers();
+    setInterval(updateTimers, 1000);
+</script>
+{% endblock %}

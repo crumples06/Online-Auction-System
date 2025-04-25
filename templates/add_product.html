@@ -1,18 +1,288 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
 
-<div>
-    <a href="{% url 'add_auction' %}">Auction an existing product</a>
-    <div>
-        <form action="" method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{form.as_p}}
-            <label for="images">Upload Images:</label>
-            <input type="file" name="images" id="images" multiple>
-            <!-- add required later -->
+{% block title %}Add Product - BidBazaar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-image-container {
+        position: relative;
+        display: inline-block;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
     
-            <button type="submit">Add Product</button>
-            <!--<input type="submit", value="Submit">-->
-        </form>
+    .preview-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .remove-image {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255,255,255,0.8);
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        text-align: center;
+        line-height: 25px;
+        cursor: pointer;
+        color: #dc3545;
+    }
+    
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary-color);
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">Add a New Product</h1>
+            <p class="lead">Fill out the details below to add a new product that you want to auction.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Tips for a Successful Auction</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item px-0">
+                            <i class="fas fa-camera text-primary me-2"></i> Upload clear, high-quality images
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="fas fa-pen text-primary me-2"></i> Write detailed product descriptions
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="fas fa-tags text-primary me-2"></i> Set a reasonable base price
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="fas fa-info-circle text-primary me-2"></i> Mention any defects or issues
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="fas fa-box text-primary me-2"></i> Include dimensions and weight if applicable
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Already Have a Product?</h5>
+                    <p>If you've already added a product and want to create an auction for it:</p>
+                    <a href="{% url 'add_auction' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-gavel me-2"></i> Auction an Existing Product
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <form action="" method="POST" enctype="multipart/form-data" id="productForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Product Name</label>
+                            {{ form.name.errors }}
+                            <input type="text" name="{{ form.name.html_name }}" id="{{ form.name.id_for_label }}" class="form-control" placeholder="Enter product name" required>
+                            {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description.errors }}
+                            <textarea name="{{ form.description.html_name }}" id="{{ form.description.id_for_label }}" class="form-control" rows="5" placeholder="Provide a detailed description of your product" required></textarea>
+                            {% if form.description.help_text %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.base_price.id_for_label }}" class="form-label">Base Price (₹)</label>
+                            {{ form.base_price.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" name="{{ form.base_price.html_name }}" id="{{ form.base_price.id_for_label }}" class="form-control" min="1" placeholder="Enter starting price" required>
+                            </div>
+                            {% if form.base_price.help_text %}
+                            <div class="form-text">{{ form.base_price.help_text }}</div>
+                            {% else %}
+                            <div class="form-text">Set a reasonable starting price to attract bidders.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Product Images</label>
+                            <div class="upload-area mb-3" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                <p class="mb-1">Drag & drop your images here</p>
+                                <p class="text-muted small mb-2">or click to browse files</p>
+                                <p class="text-muted small mb-0">Upload up to 5 images (Max 5MB each)</p>
+                                <input type="file" name="images" id="images" multiple accept="image/*" class="d-none">
+                            </div>
+                            
+                            <div id="imagePreviewContainer" class="d-flex flex-wrap"></div>
+                            <div id="imageError" class="text-danger mt-2"></div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i> Add Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Image preview functionality
+    const uploadArea = document.getElementById('uploadArea');
+    const imagesInput = document.getElementById('images');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imageError = document.getElementById('imageError');
+    const maxFiles = 5;
+    const maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+    let selectedFiles = [];
+    
+    // Handle click on upload area
+    uploadArea.addEventListener('click', function() {
+        imagesInput.click();
+    });
+    
+    // Prevent default behavior for drag events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Highlight upload area on drag
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        uploadArea.classList.add('bg-light');
+        uploadArea.style.borderColor = 'var(--primary-color)';
+    }
+    
+    function unhighlight() {
+        uploadArea.classList.remove('bg-light');
+        uploadArea.style.borderColor = '#dee2e6';
+    }
+    
+    // Handle dropped files
+    uploadArea.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+    
+    // Handle file selection
+    imagesInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    function handleFiles(files) {
+        if (selectedFiles.length + files.length > maxFiles) {
+            imageError.textContent = `You can only upload up to ${maxFiles} images.`;
+            return;
+        }
+        
+        imageError.textContent = '';
+        
+        Array.from(files).forEach(file => {
+            if (!file.type.match('image.*')) {
+                imageError.textContent = 'Only image files are allowed.';
+                return;
+            }
+            
+            if (file.size > maxFileSize) {
+                imageError.textContent = 'Image size should not exceed 5MB.';
+                return;
+            }
+            
+            selectedFiles.push(file);
+            previewImage(file);
+        });
+    }
+    
+    function previewImage(file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'preview-image-container';
+            preview.innerHTML = `
+                <img src="${e.target.result}" class="preview-image" alt="Preview">
+                <div class="remove-image" data-filename="${file.name}">
+                    <i class="fas fa-times"></i>
+                </div>
+            `;
+            
+            imagePreviewContainer.appendChild(preview);
+            
+            // Add remove functionality
+            preview.querySelector('.remove-image').addEventListener('click', function() {
+                const filename = this.getAttribute('data-filename');
+                removeFile(filename);
+                preview.remove();
+            });
+        }
+        
+        reader.readAsDataURL(file);
+    }
+    
+    function removeFile(filename) {
+        selectedFiles = selectedFiles.filter(file => file.name !== filename);
+    }
+    
+    // Handle form submission
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        if (selectedFiles.length === 0) {
+            e.preventDefault();
+            imageError.textContent = 'Please upload at least one image of your product.';
+        }
+    });
+</script>
+{% endblock %}
 

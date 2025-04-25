@@ -1,16 +1,349 @@
-{% include 'navbar.html' %}
+{% extends 'base.html' %}
 
-<h2>Auctions You've Won</h2>
+{% block title %}Auctions You've Won - BidBazaar{% endblock %}
 
-{% if won_auctions %}
-    {% for auction in won_auctions %}
-        <div>
-            <h3><a href="{% url 'item' auction.id %}">{{ auction.product.name }}</a></h3>
-            <p>End Time: {{ auction.end_time }}</p>
-            <p>Winning Bid: {{ auction.higest_bid }}</p>
-            <hr>
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Auctions You've Won</h1>
+            <p class="text-muted">Track and manage all your winning auctions in one place.</p>
         </div>
-    {% endfor %}
-{% else %}
-    <p>You haven't won any auctions yet.</p>
-{% endif %}
+    </div>
+    
+    {% if won_auctions %}
+    <!-- Status tabs -->
+    <ul class="nav nav-pills mb-4" id="auctionTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                All Auctions <span class="badge bg-primary ms-1">{{ won_auctions|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="false">
+                Pending Payment
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="paid-tab" data-bs-toggle="pill" data-bs-target="#paid" type="button" role="tab" aria-controls="paid" aria-selected="false">
+                Pending Delivery
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="completed-tab" data-bs-toggle="pill" data-bs-target="#completed" type="button" role="tab" aria-controls="completed" aria-selected="false">
+                Completed
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="auctionTabContent">
+        <!-- All Auctions Tab -->
+        <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+            <div class="row">
+                {% for auction in won_auctions %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="position-relative">
+                            {% if auction.product.images.first %}
+                            <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                            {% endif %}
+                            
+                            <!-- Status badge -->
+                            <div class="position-absolute top-0 start-0 m-3">
+                                {% if not auction.is_paid %}
+                                <span class="badge bg-warning">Payment Required</span>
+                                {% elif not auction.is_delivered %}
+                                <span class="badge bg-info">Shipping</span>
+                                {% else %}
+                                <span class="badge bg-success">Completed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">{{ auction.product.name }}</a>
+                            </h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Winning Bid:</strong>
+                                    <span class="text-success fw-bold">₹{{ auction.higest_bid }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Won On:</strong>
+                                    <span>{{ auction.end_time|date }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Seller:</strong>
+                                    <a href="{% url 'userProfile' auction.seller.id %}" class="text-decoration-none">{{ auction.seller.username }}</a>
+                                </div>
+                            </div>
+                            
+                            <!-- Status/action based on auction state -->
+                            {% if not auction.is_paid %}
+                            <div class="alert alert-warning text-center mb-3">
+                                <i class="fas fa-exclamation-circle me-2"></i> Payment Required
+                            </div>
+                            <form method="POST" action="{% url 'make_payment' auction.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-credit-card me-2"></i> Pay Now
+                                </button>
+                            </form>
+                            {% elif not auction.is_delivered %}
+                            <div class="alert alert-info text-center mb-3">
+                                <i class="fas fa-truck me-2"></i> Item is being shipped
+                            </div>
+                            <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-check-circle me-2"></i> Confirm Receipt
+                                </button>
+                            </form>
+                            {% else %}
+                            <div class="alert alert-success text-center mb-3">
+                                <i class="fas fa-check-circle me-2"></i> Transaction Complete
+                            </div>
+                            <a href="{% url 'item' auction.id %}" class="btn btn-outline-primary w-100">View Details</a>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar-alt me-1"></i> {{ auction.end_time|timesince }} ago
+                            </small>
+                            {% if auction.is_delivered and not auction.has_review %}
+                            <a href="{% url 'item' auction.id %}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-star me-1"></i> Leave Review
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Pending Payment Tab -->
+        <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+            <div class="row">
+                {% for auction in won_auctions %}
+                {% if not auction.is_paid %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="position-relative">
+                            {% if auction.product.images.first %}
+                            <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                            {% endif %}
+                            <span class="badge bg-warning position-absolute top-0 start-0 m-3">Payment Required</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">{{ auction.product.name }}</a>
+                            </h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Winning Bid:</strong>
+                                    <span class="text-success fw-bold">₹{{ auction.higest_bid }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Won On:</strong>
+                                    <span>{{ auction.end_time|date }}</span>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{% url 'make_payment' auction.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-credit-card me-2"></i> Pay Now
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+                {% if not won_auctions|selectattr:"is_paid"|rejectattr:"is_paid"|list|length %}
+                <div class="col-12">
+                    <div class="text-center py-5 my-4 bg-light rounded">
+                        <i class="fas fa-check-circle fa-4x text-muted mb-3"></i>
+                        <h4>No Pending Payments</h4>
+                        <p class="text-muted">You have no auctions requiring payment.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Paid Tab -->
+        <div class="tab-pane fade" id="paid" role="tabpanel" aria-labelledby="paid-tab">
+            <div class="row">
+                {% for auction in won_auctions %}
+                {% if auction.is_paid and not auction.is_delivered %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="position-relative">
+                            {% if auction.product.images.first %}
+                            <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                            {% endif %}
+                            <span class="badge bg-info position-absolute top-0 start-0 m-3">Shipping</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">{{ auction.product.name }}</a>
+                            </h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Payment:</strong>
+                                    <span class="text-success">Completed</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Winning Bid:</strong>
+                                    <span class="fw-bold">₹{{ auction.higest_bid }}</span>
+                                </div>
+                            </div>
+                            <div class="alert alert-info text-center mb-3">
+                                <i class="fas fa-truck me-2"></i> Item is being shipped
+                            </div>
+                            <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-check-circle me-2"></i> Confirm Receipt
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+                {% if not won_auctions|selectattr:"is_paid"|selectattr:"is_delivered"|rejectattr:"is_delivered"|list|length %}
+                <div class="col-12">
+                    <div class="text-center py-5 my-4 bg-light rounded">
+                        <i class="fas fa-truck fa-4x text-muted mb-3"></i>
+                        <h4>No Items Being Shipped</h4>
+                        <p class="text-muted">You have no items currently being shipped.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Completed Tab -->
+        <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+            <div class="row">
+                {% for auction in won_auctions %}
+                {% if auction.is_paid and auction.is_delivered %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="position-relative">
+                            {% if auction.product.images.first %}
+                            <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                            {% else %}
+                            <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                            {% endif %}
+                            <span class="badge bg-success position-absolute top-0 start-0 m-3">Completed</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'item' auction.id %}" class="text-decoration-none text-dark">{{ auction.product.name }}</a>
+                            </h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong>Status:</strong>
+                                    <span class="text-success">Transaction Complete</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Purchase price:</strong>
+                                    <span class="fw-bold">₹{{ auction.higest_bid }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <strong>Completed on:</strong>
+                                    <span>{{ auction.buyer_confirmed_date|default:auction.end_time|date }}</span>
+                                </div>
+                            </div>
+                            
+                            <a href="{% url 'item' auction.id %}" class="btn btn-outline-primary w-100">View Details</a>
+                        </div>
+                        <div class="card-footer bg-white text-center">
+                            {% if not auction.has_review %}
+                            <a href="{% url 'item' auction.id %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-star me-1"></i> Leave Review
+                            </a>
+                            {% else %}
+                            <span class="text-success">
+                                <i class="fas fa-check-circle me-1"></i> Review Submitted
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+                {% if not won_auctions|selectattr:"is_paid"|selectattr:"is_delivered"|list|length %}
+                <div class="col-12">
+                    <div class="text-center py-5 my-4 bg-light rounded">
+                        <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                        <h4>No Completed Transactions</h4>
+                        <p class="text-muted">You have no completed transactions yet.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="text-center py-5 my-4 bg-light rounded">
+        <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
+        <h3>You haven't won any auctions yet</h3>
+        <p class="text-muted mb-4">Participate in auctions to see your winning items here.</p>
+        <a href="{% url 'auctions' %}" class="btn btn-primary">
+            <i class="fas fa-gavel me-2"></i> Browse Active Auctions
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#auctionTab button'))
+        triggerTabList.forEach(function(triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function(event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        });
+        
+        // Count items in each tab category and update badges
+        const pendingCount = document.querySelectorAll('.tab-pane#pending .card').length;
+        const paidCount = document.querySelectorAll('.tab-pane#paid .card').length;
+        const completedCount = document.querySelectorAll('.tab-pane#completed .card').length;
+        
+        if (pendingCount > 0) {
+            const pendingTab = document.getElementById('pending-tab');
+            pendingTab.innerHTML = `Pending Payment <span class="badge bg-warning ms-1">${pendingCount}</span>`;
+        }
+        
+        if (paidCount > 0) {
+            const paidTab = document.getElementById('paid-tab');
+            paidTab.innerHTML = `Pending Delivery <span class="badge bg-info ms-1">${paidCount}</span>`;
+        }
+        
+        if (completedCount > 0) {
+            const completedTab = document.getElementById('completed-tab');
+            completedTab.innerHTML = `Completed <span class="badge bg-success ms-1">${completedCount}</span>`;
+        }
+    });
+</script>
+{% endblock %}

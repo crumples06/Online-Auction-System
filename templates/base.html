@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Online Auction Platform{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--secondary-color);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-accent:hover {
+            background-color: #c0392b;
+            border-color: #c0392b;
+            color: white;
+        }
+        
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+        
+        /* Auction specific styles */
+        .auction-timer {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        
+        .current-bid {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+        
+        .badge-live {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+        
+        /* Custom toast for notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        /* Watchlist icon */
+        .watchlist-icon {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .watchlist-icon:hover, .watchlist-icon.active {
+            color: var(--accent-color);
+        }
+        
+        /* Product image gallery */
+        .product-image {
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        /* User profile */
+        .profile-header {
+            background-color: var(--light-color);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Rating stars */
+        .rating-stars .fa-star {
+            color: #f1c40f;
+        }
+        
+        /* Chat section */
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: white;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .chat-message.own {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .chat-message.other {
+            background-color: #f1f1f1;
+            margin-right: auto;
+        }
+        
+        /* Wallet UI */
+        .wallet-balance {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .profile-avatar {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .product-image {
+                height: 200px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-gavel me-2"></i>
+                BidBazaar
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'auctions' %}">Auctions</a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'add_product' %}">Sell Item</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="d-flex">
+                    {% if request.user.is_authenticated %}
+                    <div class="dropdown me-3">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-wallet me-1"></i> Wallet
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;">
+                            <h6 class="dropdown-header">Your Balance</h6>
+                            <div class="wallet-balance mb-2">₹ 0.00</div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-primary">Add Funds</button>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'watchlist' %}" class="nav-link me-3">
+                        <i class="fas fa-heart me-1"></i> Watchlist
+                    </a>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ request.user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="{% url 'userProfile' request.user.id %}">
+                                <i class="fas fa-user me-2"></i> Profile
+                            </a>
+                            <a class="dropdown-item" href="{% url 'won_auctions' request.user.id %}">
+                                <i class="fas fa-trophy me-2"></i> Won Auctions
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary me-2">Login</a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-light">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mb-5">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>BidBazaar</h5>
+                    <p>Your trusted online auction marketplace. Bid, buy, and sell with confidence.</p>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'home' %}" class="text-white">Home</a></li>
+                        <li><a href="{% url 'auctions' %}" class="text-white">Auctions</a></li>
+                        {% if request.user.is_authenticated %}
+                        <li><a href="{% url 'add_product' %}" class="text-white">Sell Item</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <h5>Categories</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white">Electronics</a></li>
+                        <li><a href="#" class="text-white">Fashion</a></li>
+                        <li><a href="#" class="text-white">Home & Garden</a></li>
+                        <li><a href="#" class="text-white">Collectibles</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i> support@bidbazaar.com</li>
+                        <li><i class="fas fa-phone me-2"></i> +91 123-456-7890</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> New Delhi, India</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-4" style="border-color: rgba(255,255,255,0.1);">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2023 BidBazaar. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Socket.IO for real-time features -->
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        // Enable all tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Function to show toast notifications
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 5000 });
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', function () {
+                toast.remove();
+            });
+        }
+        
+        // Socket.IO connection (placeholder for future implementation)
+        /*
+        const socket = io();
+        
+        socket.on('connect', () => {
+            console.log('Connected to Socket.IO server');
+        });
+        
+        socket.on('bidUpdate', (data) => {
+            // Update auction details when a new bid is placed
+            if (window.location.href.includes(`/item/${data.auction_id}`)) {
+                document.getElementById('current-bid').textContent = data.new_bid_amount;
+                document.getElementById('bidder-name').textContent = data.bidder_name;
+                showToast(`New bid: ₹${data.new_bid_amount} by ${data.bidder_name}`, 'primary');
+            }
+        });
+        
+        socket.on('auctionEnded', (data) => {
+            // Notify when an auction ends
+            showToast(`The auction for ${data.product_name} has ended!`, 'warning');
+        });
+        
+        socket.on('outbid', (data) => {
+            // Notify when a user is outbid
+            showToast(`You have been outbid on ${data.product_name}!`, 'danger');
+        });
+        */
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 
