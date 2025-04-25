@@ -89,3 +89,37 @@ class Watchlist(models.Model):
 
     def __str__(self):
         return f"{self.user.username} watching {self.auction.product}"
+
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(decimal_places=2, default=0.0, max_digits=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet (₹{self.balance})"
+
+class WalletTransaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('DEPOSIT', 'Deposit'),
+        ('WITHDRAWAL', 'Withdrawal'),
+        ('PAYMENT', 'Payment'),
+        ('REFUND', 'Refund'),
+    ]
+    
+    STATUSES = [
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+    ]
+    
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    amount = models.DecimalField(decimal_places=2, max_digits=10)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    status = models.CharField(max_length=10, choices=STATUSES, default='PENDING')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    reference_id = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.transaction_type} of ₹{self.amount} - {self.status}"

@@ -56,9 +56,9 @@
                 <p>No images available</p>
             </div>
         </div>
-        {% endif %}
-    </div>
-    
+    {% endif %}
+</div>
+
     <!-- Product Details & Bidding -->
     <div class="col-lg-6">
         <div class="card shadow-sm mb-4">
@@ -70,14 +70,14 @@
                         <a href="{% url 'remove_from_watchlist' auction.id %}" class="btn btn-sm btn-outline-danger">
                             <i class="fas fa-heart me-1"></i> Remove from Watchlist
                         </a>
-                        {% else %}
+    {% else %}
                         <a href="{% url 'add_to_watchlist' auction.id %}" class="btn btn-sm btn-outline-primary">
                             <i class="far fa-heart me-1"></i> Add to Watchlist
                         </a>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                
+    {% endif %}
+    {% endif %}
+</div>
+
                 <p class="text-muted mb-4">{{ auction.product.description }}</p>
                 
                 <div class="row mb-4">
@@ -138,7 +138,7 @@
                         <div class="me-3">
                             <img src="https://via.placeholder.com/50" alt="User Avatar" class="rounded-circle" width="50" height="50">
                         </div>
-                        <div>
+<div>
                             <h6 class="mb-0">
                                 <a href="{% url 'userProfile' auction.seller.id %}" class="text-decoration-none">{{ auction.seller.username }}</a>
                             </h6>
@@ -147,17 +147,28 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                {% if request.user.is_authenticated %}
-                    {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
+</div>
+
+    {% if request.user.is_authenticated %}
+        {% if now >= auction.start_time and now < auction.end_time and request.user != auction.seller %}
                     <div class="card border-primary mb-4">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">Place Your Bid</h5>
                         </div>
                         <div class="card-body">
+                            <div class="mb-3 d-flex justify-content-between align-items-center">
+                                <span>Your Wallet Balance:</span>
+                                <span class="fw-bold">₹ {{ wallet_balance }}</span>
+                            </div>
+                            
+                            {% if wallet_balance < auction.higest_bid|add:'0.01' %}
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Your wallet balance is too low to place a bid. <a href="{% url 'add_funds' %}">Add funds</a> to your wallet.
+                            </div>
+                            {% endif %}
+                            
                             <form method="POST" action="">
-                                {% csrf_token %}
+                {% csrf_token %}
                                 <div class="mb-3">
                                     <label for="bid" class="form-label">Your Bid Amount (₹)</label>
                                     <div class="input-group">
@@ -166,10 +177,17 @@
                                     </div>
                                     <div class="form-text">Minimum bid: ₹{{ auction.higest_bid|add:'0.01' }}</div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100" name="bid_submit">
+                                <button type="submit" class="btn btn-primary w-100" name="bid_submit" {% if wallet_balance < auction.higest_bid|add:'0.01' %}disabled{% endif %}>
                                     <i class="fas fa-gavel me-2"></i> Place Bid
                                 </button>
-                            </form>
+                                {% if wallet_balance < auction.higest_bid|add:'0.01' %}
+                                <div class="text-center mt-2">
+                                    <a href="{% url 'add_funds' %}" class="btn btn-outline-success">
+                                        <i class="fas fa-plus-circle me-2"></i> Add Funds to Wallet
+                                    </a>
+                                </div>
+                                {% endif %}
+            </form>
                         </div>
                     </div>
                     {% elif now < auction.start_time %}
@@ -180,53 +198,46 @@
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-circle me-2"></i> This auction has ended.
                     </div>
-                    {% endif %}
+        {% endif %}
                 {% else %}
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i> Please <a href="{% url 'login' %}">log in</a> to place a bid.
                 </div>
-                {% endif %}
-                
+    {% endif %}
+
                 <!-- Winner Actions -->
-                {% if auction.winner == request.user and auction.end_time < now %}
+    {% if auction.winner == request.user and auction.end_time < now %}
                 <div class="card border-success mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">Congratulations! You won this auction.</h5>
                     </div>
                     <div class="card-body">
-                        {% if not auction.is_paid and not auction.is_delivered %}
+    {% if not auction.is_paid and not auction.is_delivered %}
                         <p>Complete your purchase by making the payment.</p>
-                        <form method="POST" action="{% url 'make_payment' auction.id %}">
-                            {% csrf_token %}
+        <form method="POST" action="{% url 'make_payment' auction.id %}">
+            {% csrf_token %}
                             <button type="submit" class="btn btn-success w-100">
                                 <i class="fas fa-credit-card me-2"></i> Pay Now (₹{{ auction.higest_bid }})
                             </button>
-                        </form>
-                        {% elif not auction.is_delivered %}
+        </form>
+    {% elif not auction.is_delivered %}
                         <p>Your payment has been processed. Please confirm when you receive the item.</p>
-                        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
-                            {% csrf_token %}
+        <form method="POST" action="{% url 'confirm_delivery' auction.id %}">
+            {% csrf_token %}
                             <button type="submit" class="btn btn-outline-success w-100">
                                 <i class="fas fa-check-circle me-2"></i> Confirm Delivery
                             </button>
-                        </form>
-                        {% else %}
+        </form>
+    {% else %}
                         <p class="mb-0">
                             <i class="fas fa-check-circle text-success me-2"></i> You have completed this purchase and confirmed delivery.
                         </p>
-                        {% endif %}
+    {% endif %}
                     </div>
                 </div>
-                {% endif %}
+    {% endif %}
+
                 
-                <!-- AI Price Recommendation -->
-                <div class="alert alert-info d-flex align-items-center">
-                    <i class="fas fa-robot fa-2x me-3"></i>
-                    <div>
-                        <h6 class="alert-heading">AI Price Recommendation</h6>
-                        <p class="mb-0">Based on similar items, a fair price range is ₹10,500 - ₹14,200.</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -250,12 +261,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for bid in bids %}
+    {% for bid in bids %}
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <img src="https://via.placeholder.com/36" alt="User Avatar" class="rounded-circle me-2" width="36" height="36">
-                                        <div>
+        <div>
                                             {{ bid.bidder.username }}
                                             {% if bid.bidder == auction.winner %}
                                             <span class="badge bg-success ms-1">Winner</span>
@@ -347,7 +358,7 @@
                                 {% for i in "12345" %}
                                 <input type="radio" class="btn-check" name="rating" id="rating{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
                                 <label class="btn btn-outline-warning" for="rating{{ i }}">{{ i }}</label>
-                                {% endfor %}
+    {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -412,15 +423,15 @@
     </div>
 </div>
 
-{% if messages %}
+    {% if messages %}
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     {% for message in messages %}
-    <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast align-items-center bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
-            <div class="toast-body">
+            <div class="toast-body text-dark">
                 {{ message }}
             </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     </div>
     {% endfor %}

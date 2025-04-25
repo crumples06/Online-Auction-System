@@ -233,9 +233,10 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;">
                             <h6 class="dropdown-header">Your Balance</h6>
-                            <div class="wallet-balance mb-2">₹ 0.00</div>
+                            <div class="wallet-balance mb-2">₹ {{ request.user.wallet.balance|default:"0.00" }}</div>
                             <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-primary">Add Funds</button>
+                                <a href="{% url 'add_funds' %}" class="btn btn-sm btn-primary">Add Funds</a>
+                                <a href="{% url 'wallet_dashboard' %}" class="btn btn-sm btn-outline-secondary">Wallet History</a>
                             </div>
                         </div>
                     </div>
@@ -337,17 +338,17 @@
         function showToast(message, type = 'info') {
             const toastContainer = document.querySelector('.toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.className = `toast align-items-center bg-${type} border-0`;
             toast.setAttribute('role', 'alert');
             toast.setAttribute('aria-live', 'assertive');
             toast.setAttribute('aria-atomic', 'true');
             
             toast.innerHTML = `
                 <div class="d-flex">
-                    <div class="toast-body">
+                    <div class="toast-body text-dark">
                         ${message}
                     </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             `;
             

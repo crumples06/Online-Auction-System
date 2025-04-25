@@ -12,6 +12,7 @@ from django.utils.timezone import now, timedelta
 from decimal import Decimal
 from django.http import Http404
 from django.db import models
+from django.db.models import F
 
 # Create your views here.
 
@@ -61,6 +62,9 @@ def registerPage(request):
                 address=form.cleaned_data['address']
             )
             
+            # Create a wallet for the new user
+            Wallet.objects.create(user=user, balance=0)
+            
             login(request, user)
             return redirect('home')
         else:
@@ -69,7 +73,29 @@ def registerPage(request):
     return render(request, 'login_register.html', {'form':form})
 
 def home(request):
-    return render(request, 'home.html')
+    # Get current time to determine auction status
+    current_time = now()
+    
+    # Update auction statuses
+    Auction.objects.filter(start_time__gt=current_time).update(status='Starting Soon')
+    Auction.objects.filter(start_time__lte=current_time, end_time__gt=current_time).update(status='Active')
+    Auction.objects.filter(end_time__lte=current_time).update(status='Closed')
+    
+    # Get featured auctions - active auctions with highest bids (limit to 4)
+    featured_auctions = Auction.objects.filter(
+        status='Active'
+    ).order_by('-higest_bid')[:4]  # Get top 4 auctions with highest bids
+    
+    # Initialize watched_auctions_ids for authenticated users
+    watched_auctions_ids = []
+    if request.user.is_authenticated:
+        watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
+    
+    context = {
+        'featured_auctions': featured_auctions,
+        'watched_auctions_ids': watched_auctions_ids,
+    }
+    return render(request, 'home.html', context)
 
 def auctions(request):
     current_time = now()
@@ -155,8 +181,16 @@ def item(request, pk):
             if not request.user.is_authenticated:
                 messages.error(request, "You need to log in to place a bid.")
                 return redirect('login')
-
+                
+            # Get or create wallet
+            wallet, created = Wallet.objects.get_or_create(user=request.user)
             bid_amount = Decimal(request.POST.get('bid_amount'))
+            
+            # Check if user has enough balance
+            if bid_amount > wallet.balance:
+                messages.error(request, f"Insufficient funds. Your wallet balance is ₹{wallet.balance}. Add more funds to place this bid.")
+                return redirect('item', pk=auction.id)
+
             if bid_amount > Decimal(auction.higest_bid) and bid_amount > Decimal(auction.product.base_price):
                 previous_winner = auction.winner
 
@@ -168,8 +202,36 @@ def item(request, pk):
                     auction.end_time += timedelta(minutes=5)
                     messages.success(request, "Auction extended by 5 minutes!")
 
+                # If there was a previous winner, refund their bid amount
+                if previous_winner and previous_winner != request.user:
+                    prev_winner_wallet, created = Wallet.objects.get_or_create(user=previous_winner)
+                    prev_winner_wallet.balance = F('balance') + Decimal(auction.higest_bid)
+                    prev_winner_wallet.save()
+                    
+                    # Create refund transaction
+                    WalletTransaction.objects.create(
+                        wallet=prev_winner_wallet,
+                        amount=Decimal(auction.higest_bid),
+                        transaction_type='REFUND',
+                        status='SUCCESS',
+                        description=f"Bid refund for {auction.product.name}"
+                    )
+                
                 auction.winner = request.user
                 auction.save()
+
+                # Deduct the bid amount from the user's wallet
+                wallet.balance = F('balance') - bid_amount
+                wallet.save()
+                
+                # Create payment transaction
+                WalletTransaction.objects.create(
+                    wallet=wallet,
+                    amount=bid_amount,
+                    transaction_type='PAYMENT',
+                    status='SUCCESS',
+                    description=f"Bid payment for {auction.product.name}"
+                )
 
                 Bid.objects.create(auction=auction, bidder=request.user, bid_amount=bid_amount)
                 messages.success(request, 'Your bid has been placed successfully.')
@@ -205,6 +267,9 @@ def item(request, pk):
     watched_auctions_ids = []
     if request.user.is_authenticated:
         watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
+        
+        # Get wallet balance for UI display
+        wallet, created = Wallet.objects.get_or_create(user=request.user)
 
     context = {
         'watched_auctions_ids': watched_auctions_ids,
@@ -213,6 +278,7 @@ def item(request, pk):
         'reviews': reviews,
         'now': current_time,
         'form': form,  # Only for the winner
+        'wallet_balance': wallet.balance if request.user.is_authenticated else 0,
     }
     return render(request, 'item.html', context)
 
@@ -339,4 +405,82 @@ def make_payment(request, auction_id):
 @login_required(login_url='login')
 def price_prediction(request):
     return render(request, 'price_prediction.html')
+
+# Wallet views
+@login_required(login_url='login')
+def wallet_dashboard(request):
+    # Get or create wallet for the user
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    
+    # Get transactions
+    transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-timestamp')
+    
+    context = {
+        'wallet': wallet,
+        'transactions': transactions,
+    }
+    return render(request, 'wallet_dashboard.html', context)
+
+@login_required(login_url='login')
+def add_funds(request):
+    # Get or create wallet for the user
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        amount = Decimal(request.POST.get('amount', 0))
+        
+        if amount < 100:
+            messages.error(request, "Minimum amount to add is ₹100.")
+            return redirect('add_funds')
+            
+        # Create a pending transaction
+        transaction = WalletTransaction.objects.create(
+            wallet=wallet,
+            amount=amount,
+            transaction_type='DEPOSIT',
+            status='PENDING',
+            description='Wallet funding'
+        )
+        
+        # Redirect to payment processing
+        return redirect('process_payment', transaction_id=transaction.id)
+        
+    context = {
+        'wallet': wallet,
+    }
+    return render(request, 'add_funds.html', context)
+
+@login_required(login_url='login')
+def process_payment(request, transaction_id):
+    # Get the transaction
+    transaction = get_object_or_404(WalletTransaction, id=transaction_id)
+    
+    # Ensure the transaction belongs to the current user
+    if transaction.wallet.user != request.user:
+        messages.error(request, "You don't have permission to view this transaction.")
+        return redirect('wallet_dashboard')
+    
+    # If the transaction is already processed, redirect to wallet dashboard
+    if transaction.status != 'PENDING':
+        return redirect('wallet_dashboard')
+    
+    if request.method == 'POST':
+        # This is a demo implementation. In a real application, you would integrate with a payment gateway
+        # For demo purposes, we'll just mark the transaction as successful and update the wallet balance
+        
+        transaction.status = 'SUCCESS'
+        transaction.save()
+        
+        # Update wallet balance
+        wallet = transaction.wallet
+        wallet.balance = F('balance') + transaction.amount
+        wallet.save()
+        
+        messages.success(request, f"Successfully added ₹{transaction.amount} to your wallet.")
+        return redirect('wallet_dashboard')
+    
+    context = {
+        'transaction': transaction,
+    }
+    return render(request, 'process_payment.html', context)
 

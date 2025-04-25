@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Wallet - BidBazaar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Your Wallet</h1>
+            <p class="text-muted">Manage your funds for bidding on auctions.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'add_funds' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Funds
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted mb-3">Current Balance</h5>
+                    <div class="display-4 text-primary mb-2">₹ {{ wallet.balance }}</div>
+                    <p class="text-muted small">Last updated: {{ wallet.updated_at|date:"j M Y, g:i a" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="row g-3 mt-2">
+                        <div class="col-6">
+                            <a href="{% url 'add_funds' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-plus me-2"></i>Add Funds
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'auctions' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-gavel me-2"></i>Browse Auctions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Recent Transactions</h4>
+    
+    {% if transactions %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.timestamp|date:"j M Y, g:i a" }}</td>
+                    <td>
+                        {% if transaction.transaction_type == 'DEPOSIT' %}
+                        <span class="badge bg-success">Deposit</span>
+                        {% elif transaction.transaction_type == 'PAYMENT' %}
+                        <span class="badge bg-primary">Payment</span>
+                        {% elif transaction.transaction_type == 'REFUND' %}
+                        <span class="badge bg-info">Refund</span>
+                        {% else %}
+                        <span class="badge bg-warning">Withdrawal</span>
+                        {% endif %}
+                    </td>
+                    <td class="{% if transaction.transaction_type == 'DEPOSIT' or transaction.transaction_type == 'REFUND' %}text-success{% else %}text-danger{% endif %}">
+                        {% if transaction.transaction_type == 'DEPOSIT' or transaction.transaction_type == 'REFUND' %}+{% else %}-{% endif %}₹ {{ transaction.amount }}
+                    </td>
+                    <td>
+                        {% if transaction.status == 'SUCCESS' %}
+                        <span class="badge bg-success">Success</span>
+                        {% elif transaction.status == 'PENDING' %}
+                        <span class="badge bg-warning">Pending</span>
+                        {% else %}
+                        <span class="badge bg-danger">Failed</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ transaction.description|default:"--" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 my-4 bg-light rounded">
+        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+        <h4>No Transactions Yet</h4>
+        <p class="text-muted">Your transaction history will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

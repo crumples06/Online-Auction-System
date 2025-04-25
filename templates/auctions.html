@@ -112,7 +112,7 @@
 
         {% if auction_listings %}
         <div class="row">
-            {% for auction in auction_listings %}
+        {% for auction in auction_listings %}
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="position-relative">
@@ -153,8 +153,8 @@
                         </small>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
+                </div>
+        {% endfor %}
         </div>
         {% else %}
         <div class="alert alert-info">

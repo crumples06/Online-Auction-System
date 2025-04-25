@@ -34,102 +34,53 @@
     </div>
     
     <div class="row">
-        <!-- This would be a loop in the actual implementation -->
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100">
-                <div class="position-relative">
-                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-1.2.1&auto=format&fit=crop&w=989&q=80" class="card-img-top product-image" alt="Smart Watch">
-                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
-                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
-                        <i class="far fa-heart fs-5"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">Smart Watch Pro</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted">Current Bid</span>
-                        <span class="current-bid">₹12,500</span>
+        {% if featured_auctions %}
+            {% for auction in featured_auctions %}
+            <div class="col-md-6 col-lg-4 col-xl-3 mb-4">
+                <div class="card h-100">
+                    <div class="position-relative">
+                        {% if auction.product.images.first %}
+                        <img src="{{ auction.product.images.first.image.url }}" class="card-img-top product-image" alt="{{ auction.product.name }}">
+                        {% else %}
+                        <img src="https://via.placeholder.com/300x300?text=No+Image" class="card-img-top product-image" alt="No image">
+                        {% endif %}
+                        <span class="badge-live position-absolute top-0 start-0 m-3">{{ auction.status }}</span>
+                        {% if request.user.is_authenticated %}
+                            {% if auction.id in watched_auctions_ids %}
+                            <a href="{% url 'remove_from_watchlist' auction.id %}" class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon active" data-bs-toggle="tooltip" title="Remove from Watchlist">
+                                <i class="fas fa-heart fs-5"></i>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'add_to_watchlist' auction.id %}" class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
+                                <i class="far fa-heart fs-5"></i>
+                            </a>
+                            {% endif %}
+                        {% endif %}
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Ends in</span>
-                        <span class="auction-timer">2h 35m</span>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ auction.product.name }}</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Current Bid</span>
+                            <span class="current-bid">₹{{ auction.higest_bid }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted">Ends in</span>
+                            <span class="auction-timer" data-end-time="{{ auction.end_time|date:'c' }}">
+                                {{ auction.end_time|timeuntil }}
+                            </span>
+                        </div>
+                        <a href="{% url 'item' auction.id %}" class="btn btn-primary w-100">View Auction</a>
                     </div>
-                    <a href="#" class="btn btn-primary w-100">View Auction</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100">
-                <div class="position-relative">
-                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Sneakers">
-                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
-                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
-                        <i class="far fa-heart fs-5"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">Limited Edition Sneakers</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted">Current Bid</span>
-                        <span class="current-bid">₹8,200</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Ends in</span>
-                        <span class="auction-timer">5h 15m</span>
-                    </div>
-                    <a href="#" class="btn btn-primary w-100">View Auction</a>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100">
-                <div class="position-relative">
-                    <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Camera">
-                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
-                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon active" data-bs-toggle="tooltip" title="Remove from Watchlist">
-                        <i class="fas fa-heart fs-5"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">Vintage Camera</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted">Current Bid</span>
-                        <span class="current-bid">₹15,750</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Ends in</span>
-                        <span class="auction-timer">1d 3h</span>
-                    </div>
-                    <a href="#" class="btn btn-primary w-100">View Auction</a>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No active auctions available at the moment. Check back soon!
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100">
-                <div class="position-relative">
-                    <img src="https://images.unsplash.com/photo-1504274066651-8d31a536b11a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="card-img-top product-image" alt="Antique Clock">
-                    <span class="badge-live position-absolute top-0 start-0 m-3">Live</span>
-                    <button class="btn btn-sm position-absolute top-0 end-0 m-3 watchlist-icon" data-bs-toggle="tooltip" title="Add to Watchlist">
-                        <i class="far fa-heart fs-5"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">Antique Wooden Clock</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted">Current Bid</span>
-                        <span class="current-bid">₹7,300</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Ends in</span>
-                        <span class="auction-timer">8h 45m</span>
-                    </div>
-                    <a href="#" class="btn btn-primary w-100">View Auction</a>
-                </div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </section>
 
@@ -322,25 +273,41 @@
         });
     });
     
-    // Simulated countdown timers for demo
+    // Real-time countdown timers
     function updateTimers() {
         document.querySelectorAll('.auction-timer').forEach(timer => {
-            // For demo purposes only - in production would use actual time calculations
-            const text = timer.textContent;
-            if (text.includes('h')) {
-                const hours = parseInt(text.split('h')[0]);
-                const mins = parseInt(text.split('h ')[1].split('m')[0]);
-                
-                if (mins > 0) {
-                    timer.textContent = `${hours}h ${mins-1}m`;
-                } else if (hours > 0) {
-                    timer.textContent = `${hours-1}h 59m`;
-                }
+            const endTime = new Date(timer.getAttribute('data-end-time'));
+            const now = new Date();
+            
+            let diff = Math.floor((endTime - now) / 1000);
+            
+            if (diff <= 0) {
+                timer.innerHTML = '<span class="text-danger">Ended</span>';
+                return;
             }
+            
+            const days = Math.floor(diff / 86400);
+            diff -= days * 86400;
+            const hours = Math.floor(diff / 3600);
+            diff -= hours * 3600;
+            const minutes = Math.floor(diff / 60);
+            diff -= minutes * 60;
+            
+            let timeStr = '';
+            if (days > 0) {
+                timeStr = `${days}d ${hours}h`;
+            } else if (hours > 0) {
+                timeStr = `${hours}h ${minutes}m`;
+            } else {
+                timeStr = `${minutes}m`;
+            }
+            
+            timer.innerHTML = timeStr;
         });
     }
     
-    // Update every minute for demo
+    // Initial update and start interval
+    updateTimers();
     setInterval(updateTimers, 60000);
 </script>
 {% endblock %}
