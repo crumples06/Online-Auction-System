@@ -323,3 +323,7 @@ def make_payment(request, auction_id):
 
     return redirect('item', pk=auction_id)
 
+@login_required(login_url='login')
+def price_prediction(request):
+    return render(request, 'price_prediction.html')
+

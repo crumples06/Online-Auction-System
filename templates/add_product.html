@@ -129,11 +129,16 @@
                                 <span class="input-group-text">₹</span>
                                 <input type="number" name="{{ form.base_price.html_name }}" id="{{ form.base_price.id_for_label }}" class="form-control" min="1" placeholder="Enter starting price" required>
                             </div>
-                            {% if form.base_price.help_text %}
-                            <div class="form-text">{{ form.base_price.help_text }}</div>
-                            {% else %}
-                            <div class="form-text">Set a reasonable starting price to attract bidders.</div>
-                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                {% if form.base_price.help_text %}
+                                <div class="form-text">{{ form.base_price.help_text }}</div>
+                                {% else %}
+                                <div class="form-text">Set a reasonable starting price to attract bidders.</div>
+                                {% endif %}
+                                <a href="{% url 'price_prediction' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-magic me-1"></i> AI Price Prediction
+                                </a>
+                            </div>
                         </div>
                         
                         <div class="mb-4">
@@ -288,6 +293,33 @@
         if (selectedFiles.length === 0) {
             e.preventDefault();
             imageError.textContent = 'Please upload at least one image of your product.';
+        }
+    });
+    
+    // Check if there's a predicted price from the AI prediction tool
+    document.addEventListener('DOMContentLoaded', function() {
+        const predictedPrice = localStorage.getItem('predictedPrice');
+        if (predictedPrice) {
+            // Set the predicted price in the base price field
+            const basePriceInput = document.getElementById('{{ form.base_price.id_for_label }}');
+            basePriceInput.value = predictedPrice;
+            
+            // Highlight the field briefly
+            basePriceInput.classList.add('border-primary');
+            setTimeout(() => {
+                basePriceInput.classList.remove('border-primary');
+            }, 2000);
+            
+            // Show message
+            const priceMessage = document.createElement('div');
+            priceMessage.className = 'alert alert-success mt-2';
+            priceMessage.innerHTML = '<i class="fas fa-robot me-2"></i> AI-predicted optimal price applied!';
+            basePriceInput.parentElement.parentElement.appendChild(priceMessage);
+            
+            // Remove from localStorage
+            setTimeout(() => {
+                localStorage.removeItem('predictedPrice');
+            }, 1000);
         }
     });
 </script>

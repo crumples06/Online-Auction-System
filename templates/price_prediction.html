@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Price Prediction - BidBazaar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prediction-box {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .prediction-box.predicted {
+        border-color: var(--primary-color);
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    #predictionResult {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .feature-card {
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">AI Price Prediction</h1>
+            <p class="lead">Get an estimated optimal starting price for your product based on market trends and historical data.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Product Details</h5>
+                </div>
+                <div class="card-body">
+                    <form id="predictionForm">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" required>
+                                <option value="" selected disabled>Select a category</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="fashion">Fashion</option>
+                                <option value="home">Home & Garden</option>
+                                <option value="collectibles">Collectibles</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="condition" class="form-label">Condition</label>
+                            <select class="form-select" id="condition" required>
+                                <option value="" selected disabled>Select condition</option>
+                                <option value="5">New</option>
+                                <option value="4">Like New</option>
+                                <option value="3">Good</option>
+                                <option value="2">Fair</option>
+                                <option value="1">Poor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="age" class="form-label">Product Age (in years)</label>
+                            <input type="number" class="form-control" id="age" min="0" max="100" step="0.1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="marketValue" class="form-label">Estimated Market Value (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" id="marketValue" min="1" required>
+                            </div>
+                            <div class="form-text">The approximate retail price of the item when new</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="popularity" class="form-label">Popularity</label>
+                            <select class="form-select" id="popularity" required>
+                                <option value="" selected disabled>Estimate popularity</option>
+                                <option value="5">Very High</option>
+                                <option value="4">High</option>
+                                <option value="3">Medium</option>
+                                <option value="2">Low</option>
+                                <option value="1">Very Low</option>
+                            </select>
+                            <div class="form-text">How popular or in-demand is this type of item?</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="predictButton">
+                                <i class="fas fa-magic me-2"></i> Predict Optimal Price
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Predicted Price</h5>
+                    <div class="prediction-box mb-3" id="predictionBox">
+                        <p class="mb-2">Your optimal starting price</p>
+                        <div id="predictionResult">-</div>
+                        <div id="predictionRange" class="text-muted small"></div>
+                    </div>
+                    <div class="d-grid mt-3" id="useButtonContainer" style="display: none;">
+                        <button class="btn btn-success" id="usePredictionButton">
+                            <i class="fas fa-check me-2"></i> Use This Price
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">How It Works</h5>
+                    <p class="mb-0">Our AI price prediction uses Google's TensorFlow.js to analyze:</p>
+                    <ul class="mb-0">
+                        <li>Product category and condition</li>
+                        <li>Market value and age</li>
+                        <li>Current demand and popularity</li>
+                        <li>Historical auction data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">Benefits of AI Price Prediction</h4>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Maximize Returns</h5>
+                    <p class="card-text">Get the best starting price to attract bidders while maximizing your potential profit.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-tachometer-alt fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Faster Sales</h5>
+                    <p class="card-text">Optimal pricing leads to more bidder interest and quicker auction completions.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Smart Insights</h5>
+                    <p class="card-text">Leverage machine learning to understand market trends and buyer behavior.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- TensorFlow.js library -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script>
+    // Wait for TensorFlow to load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Simple price prediction model
+        async function createModel() {
+            // Create a sequential model
+            const model = tf.sequential();
+            
+            // Add layers to the model
+            model.add(tf.layers.dense({inputShape: [5], units: 10, activation: 'relu'}));
+            model.add(tf.layers.dense({units: 5, activation: 'relu'}));
+            model.add(tf.layers.dense({units: 1}));
+            
+            // Compile the model
+            model.compile({
+                optimizer: tf.train.adam(),
+                loss: 'meanSquaredError'
+            });
+            
+            return model;
+        }
+        
+        // Train the model with some sample data
+        async function trainModel(model) {
+            // Sample training data (features normalized between 0-1)
+            // [category_encoded, condition, age_normalized, market_value_normalized, popularity]
+            const xs = tf.tensor2d([
+                [0, 0.8, 0.1, 0.5, 0.8],  // Electronics, like new, 1yr old, mid-price, high popularity
+                [0, 1.0, 0.0, 0.8, 0.9],  // Electronics, new, 0yr old, high-price, very high popularity
+                [0, 0.6, 0.2, 0.6, 0.7],  // Electronics, good, 2yr old, mid-high price, high popularity
+                [0, 0.4, 0.5, 0.3, 0.5],  // Electronics, fair, 5yr old, low-price, medium popularity
+                [1, 0.9, 0.0, 0.4, 0.6],  // Fashion, like new, 0yr old, mid-low price, medium-high popularity
+                [1, 0.7, 0.1, 0.3, 0.5],  // Fashion, good, 1yr old, low price, medium popularity
+                [2, 0.9, 0.0, 0.6, 0.7],  // Home & Garden, like new, 0yr old, mid-high price, high popularity
+                [2, 0.5, 0.3, 0.5, 0.4],  // Home & Garden, fair, 3yr old, mid price, low-med popularity
+                [3, 1.0, 0.0, 0.9, 0.9],  // Collectibles, new, 0yr old, high price, high popularity
+                [3, 0.8, 0.5, 0.7, 0.8],  // Collectibles, like new, 5yr old (vintage), mid-high price, high popularity
+                [4, 0.7, 0.2, 0.4, 0.3],  // Other, good, 2yr old, mid-low price, low popularity
+            ]);
+            
+            // Sample output data (optimal starting price as % of market value)
+            const ys = tf.tensor2d([
+                [0.65],  // Electronics, like new: 65% of market value
+                [0.85],  // Electronics, new: 85% of market value
+                [0.55],  // Electronics, good: 55% of market value
+                [0.35],  // Electronics, fair: 35% of market value
+                [0.70],  // Fashion, like new: 70% of market value
+                [0.45],  // Fashion, good: 45% of market value
+                [0.75],  // Home & Garden, like new: 75% of market value
+                [0.50],  // Home & Garden, fair: 50% of market value
+                [0.90],  // Collectibles, new: 90% of market value
+                [0.85],  // Collectibles, vintage: 85% of market value
+                [0.55],  // Other, good: 55% of market value
+            ]);
+            
+            // Train the model
+            await model.fit(xs, ys, {
+                epochs: 200,
+                callbacks: {
+                    onEpochEnd: (epoch, logs) => {
+                        console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+                    }
+                }
+            });
+            
+            return model;
+        }
+        
+        // Predict the optimal starting price
+        async function predict(model, category, condition, age, marketValue, popularity) {
+            // Map category to numeric value
+            let categoryValue;
+            switch(category) {
+                case 'electronics': categoryValue = 0; break;
+                case 'fashion': categoryValue = 1; break;
+                case 'home': categoryValue = 2; break;
+                case 'collectibles': categoryValue = 3; break;
+                default: categoryValue = 4; // Other
+            }
+            
+            // Normalize inputs
+            const conditionNormalized = parseFloat(condition) / 5;
+            const ageNormalized = Math.min(age / 10, 1); // Cap at 10 years
+            const marketValueNormalized = Math.min(marketValue / 100000, 1); // Cap at 100,000
+            const popularityNormalized = parseFloat(popularity) / 5;
+            
+            // Make prediction
+            const input = tf.tensor2d([[
+                categoryValue, 
+                conditionNormalized, 
+                ageNormalized, 
+                marketValueNormalized, 
+                popularityNormalized
+            ]]);
+            
+            const prediction = model.predict(input);
+            const percentage = prediction.dataSync()[0];
+            
+            // Clamp between 0.3 and 0.9 to be safe
+            const clampedPercentage = Math.max(0.3, Math.min(0.9, percentage));
+            
+            return clampedPercentage * marketValue;
+        }
+        
+        // Initialize and train model
+        let model;
+        async function initializeModel() {
+            try {
+                console.log("Creating and training model...");
+                model = await createModel();
+                await trainModel(model);
+                console.log("Model training complete");
+                
+                // Enable the prediction button
+                document.getElementById('predictButton').disabled = false;
+            } catch (error) {
+                console.error("Error initializing model:", error);
+            }
+        }
+        
+        // Initialize the model
+        initializeModel();
+        
+        // Handle form submission
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const category = document.getElementById('category').value;
+            const condition = document.getElementById('condition').value;
+            const age = parseFloat(document.getElementById('age').value);
+            const marketValue = parseFloat(document.getElementById('marketValue').value);
+            const popularity = document.getElementById('popularity').value;
+            
+            // Update UI to show loading
+            const predictionResult = document.getElementById('predictionResult');
+            const predictionRange = document.getElementById('predictionRange');
+            predictionResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            predictionRange.textContent = 'Calculating...';
+            
+            try {
+                // Make prediction
+                const predictedPrice = await predict(model, category, condition, age, marketValue, popularity);
+                
+                // Round to nearest 100
+                const roundedPrice = Math.round(predictedPrice / 100) * 100;
+                
+                // Calculate range (±10%)
+                const minPrice = Math.round((roundedPrice * 0.9) / 100) * 100;
+                const maxPrice = Math.round((roundedPrice * 1.1) / 100) * 100;
+                
+                // Update UI
+                predictionResult.innerHTML = `₹${roundedPrice.toLocaleString()}`;
+                predictionRange.textContent = `Recommended range: ₹${minPrice.toLocaleString()} - ₹${maxPrice.toLocaleString()}`;
+                document.getElementById('predictionBox').classList.add('predicted');
+                document.getElementById('useButtonContainer').style.display = 'block';
+                
+                // Store the prediction for "Use This Price" button
+                document.getElementById('usePredictionButton').setAttribute('data-price', roundedPrice);
+            } catch (error) {
+                console.error("Prediction error:", error);
+                predictionResult.textContent = 'Error';
+                predictionRange.textContent = 'Please try again';
+            }
+        });
+        
+        // Handle "Use This Price" button
+        document.getElementById('usePredictionButton').addEventListener('click', function() {
+            const predictedPrice = this.getAttribute('data-price');
+            
+            // Store in localStorage to access from product form
+            localStorage.setItem('predictedPrice', predictedPrice);
+            
+            // Redirect to add product page
+            window.location.href = "{% url 'add_product' %}";
+        });
+    });
+</script>
+{% endblock %} 

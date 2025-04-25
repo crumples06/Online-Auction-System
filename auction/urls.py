@@ -20,7 +20,7 @@ urlpatterns = [
     path('user/<int:user_id>/won-auctions/', views.won_auctions, name='won_auctions'),
     path('auction/<int:auction_id>/pay/', views.make_payment, name='make_payment'),
     path('auction/<int:auction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
-
+    path('price-prediction/', views.price_prediction, name='price_prediction'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
