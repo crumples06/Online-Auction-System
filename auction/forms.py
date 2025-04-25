@@ -37,7 +37,10 @@ class AuctionForm(ModelForm):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        exclude = ['owner']
+        fields = ['name', 'description', 'base_price', 'category']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 
 class CustomUserCreationForm(UserCreationForm):

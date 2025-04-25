@@ -17,28 +17,32 @@
                 <h5 class="mb-0">Filters</h5>
             </div>
             <div class="card-body">
-                <form>
+                <form method="GET" action="{% url 'auctions' %}">
                     <div class="mb-3">
                         <label for="search" class="form-label">Search</label>
-                        <input type="text" class="form-control" id="search" placeholder="Enter keywords">
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Enter keywords" value="{{ search_query }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Category</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="electronics" id="electronics">
+                            <input class="form-check-input" type="checkbox" name="category" value="electronics" id="electronics"
+                            {% if "electronics" in selected_categories %}checked{% endif %}>
                             <label class="form-check-label" for="electronics">Electronics</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="fashion" id="fashion">
+                            <input class="form-check-input" type="checkbox" name="category" value="fashion" id="fashion"
+                            {% if "fashion" in selected_categories %}checked{% endif %}>
                             <label class="form-check-label" for="fashion">Fashion</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="home" id="home">
+                            <input class="form-check-input" type="checkbox" name="category" value="home" id="home"
+                            {% if "home" in selected_categories %}checked{% endif %}>
                             <label class="form-check-label" for="home">Home & Garden</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="collectibles" id="collectibles">
+                            <input class="form-check-input" type="checkbox" name="category" value="collectibles" id="collectibles"
+                            {% if "collectibles" in selected_categories %}checked{% endif %}>
                             <label class="form-check-label" for="collectibles">Collectibles</label>
                         </div>
                     </div>
@@ -47,37 +51,42 @@
                         <label class="form-label">Price Range</label>
                         <div class="row g-2">
                             <div class="col">
-                                <input type="number" class="form-control" placeholder="Min" min="0">
+                                <input type="number" class="form-control" name="min_price" placeholder="Min" min="0" value="{{ min_price }}">
                             </div>
                             <div class="col">
-                                <input type="number" class="form-control" placeholder="Max" min="0">
+                                <input type="number" class="form-control" name="max_price" placeholder="Max" min="0" value="{{ max_price }}">
                             </div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Auction Status</label>
-                        <select class="form-select">
-                            <option value="all" selected>All Auctions</option>
-                            <option value="live">Live Now</option>
-                            <option value="ending">Ending Soon</option>
-                            <option value="upcoming">Upcoming</option>
+                        <select class="form-select" name="status">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Auctions</option>
+                            <option value="live" {% if status_filter == 'live' %}selected{% endif %}>Live Now</option>
+                            <option value="ending" {% if status_filter == 'ending' %}selected{% endif %}>Ending Soon</option>
+                            <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Sort By</label>
-                        <select class="form-select">
-                            <option value="newest">Newest First</option>
-                            <option value="ending">Ending Soon</option>
-                            <option value="price_low">Price: Low to High</option>
-                            <option value="price_high">Price: High to Low</option>
+                        <select class="form-select" name="sort">
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                            <option value="ending" {% if sort_by == 'ending' %}selected{% endif %}>Ending Soon</option>
+                            <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                            <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
                         </select>
                     </div>
                     
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Apply Filters</button>
                     </div>
+                    {% if search_query or selected_categories or min_price or max_price or status_filter != 'all' or sort_by != 'newest' %}
+                    <div class="d-grid mt-2">
+                        <a href="{% url 'auctions' %}" class="btn btn-outline-secondary">Clear Filters</a>
+                    </div>
+                    {% endif %}
                 </form>
             </div>
         </div>

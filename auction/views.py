@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, timedelta
 from decimal import Decimal
 from django.http import Http404
+from django.db import models
 
 # Create your views here.
 
@@ -76,8 +77,67 @@ def auctions(request):
     Auction.objects.filter(start_time__lte=current_time, end_time__gt=current_time).update(status='Active')
     Auction.objects.filter(end_time__lte=current_time).update(status='Closed')
 
+    # Start with all active auctions
     auction_listings = Auction.objects.exclude(status='Closed')
-    context = {'auction_listings':auction_listings}
+    
+    # Handle form submissions
+    if request.method == 'GET':
+        # Search by keyword
+        search_query = request.GET.get('search', '')
+        if search_query:
+            auction_listings = auction_listings.filter(
+                models.Q(product__name__icontains=search_query) | 
+                models.Q(product__description__icontains=search_query)
+            )
+        
+        # Filter by category
+        categories = request.GET.getlist('category')
+        if categories:
+            auction_listings = auction_listings.filter(product__category__in=categories)
+        
+        # Filter by price range
+        min_price = request.GET.get('min_price')
+        if min_price and min_price.isdigit():
+            auction_listings = auction_listings.filter(higest_bid__gte=min_price)
+            
+        max_price = request.GET.get('max_price')
+        if max_price and max_price.isdigit():
+            auction_listings = auction_listings.filter(higest_bid__lte=max_price)
+        
+        # Filter by status
+        status_filter = request.GET.get('status')
+        if status_filter == 'live':
+            auction_listings = auction_listings.filter(status='Active')
+        elif status_filter == 'ending':
+            # Ending soon means ending in the next 24 hours
+            ending_soon_time = current_time + timedelta(hours=24)
+            auction_listings = auction_listings.filter(
+                status='Active', 
+                end_time__lte=ending_soon_time
+            )
+        elif status_filter == 'upcoming':
+            auction_listings = auction_listings.filter(status='Starting Soon')
+        
+        # Sort results
+        sort_by = request.GET.get('sort')
+        if sort_by == 'newest':
+            auction_listings = auction_listings.order_by('-start_time')
+        elif sort_by == 'ending':
+            auction_listings = auction_listings.order_by('end_time')
+        elif sort_by == 'price_low':
+            auction_listings = auction_listings.order_by('higest_bid')
+        elif sort_by == 'price_high':
+            auction_listings = auction_listings.order_by('-higest_bid')
+    
+    context = {
+        'auction_listings': auction_listings,
+        'search_query': request.GET.get('search', ''),
+        'selected_categories': request.GET.getlist('category'),
+        'min_price': request.GET.get('min_price', ''),
+        'max_price': request.GET.get('max_price', ''),
+        'status_filter': request.GET.get('status', 'all'),
+        'sort_by': request.GET.get('sort', 'newest')
+    }
     return render(request, 'auctions.html', context)
 
 def item(request, pk):
@@ -88,7 +148,7 @@ def item(request, pk):
     form = None
 
     can_review = request.user.is_authenticated and request.user == auction.winner and auction.end_time <= current_time
-    has_reviewed = Review.objects.filter(auction=auction, winner=request.user).exists()
+    has_reviewed = Review.objects.filter(auction=auction, winner=request.user).exists() if request.user.is_authenticated else False
 
     if request.method == 'POST':
         if 'bid_submit' in request.POST:  # Handle Bidding
@@ -141,7 +201,10 @@ def item(request, pk):
     if request.user.is_authenticated and request.user == auction.winner:
         form = ReviewForm()
 
-    watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
+    # Initialize watched_auctions_ids for authenticated users only
+    watched_auctions_ids = []
+    if request.user.is_authenticated:
+        watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
 
     context = {
         'watched_auctions_ids': watched_auctions_ids,

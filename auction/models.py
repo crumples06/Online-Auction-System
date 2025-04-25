@@ -12,9 +12,18 @@ class AuctionUser(models.Model):
         return self.user.username
     
 class Product(models.Model):
+    CATEGORY_CHOICES = [
+        ('electronics', 'Electronics'),
+        ('fashion', 'Fashion'),
+        ('home', 'Home & Garden'),
+        ('collectibles', 'Collectibles'),
+        ('other', 'Other'),
+    ]
+    
     name = models.CharField(max_length=100)
     description = models.TextField(null=True)    
     base_price = models.IntegerField(default=0)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="products", null=True)
 

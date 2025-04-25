@@ -137,6 +137,13 @@
                         </div>
                         
                         <div class="mb-4">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                            {{ form.category.errors }}
+                            {{ form.category }}
+                            <div class="form-text">Select the category that best describes your product.</div>
+                        </div>
+                        
+                        <div class="mb-4">
                             <label class="form-label">Product Images</label>
                             <div class="upload-area mb-3" id="uploadArea">
                                 <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
