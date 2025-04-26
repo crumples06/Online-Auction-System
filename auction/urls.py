@@ -26,6 +26,11 @@ urlpatterns = [
     path('wallet/', views.wallet_dashboard, name='wallet_dashboard'),
     path('wallet/add-funds/', views.add_funds, name='add_funds'),
     path('wallet/payment/<int:transaction_id>/', views.process_payment, name='process_payment'),
+    
+    # Chat URLs
+    path('auction/<int:auction_id>/chat/', views.auction_chat, name='auction_chat'),
+    path('auction/<int:auction_id>/chat/send/', views.send_message, name='send_message'),
+    path('auction/<int:auction_id>/chat/get/', views.get_messages, name='get_messages'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

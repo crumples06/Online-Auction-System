@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat - {{ auction.product.name }} - BidBazaar{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'auctions' %}">Auctions</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'item' auction.id %}">{{ auction.product.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Chat</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Auction Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h5>{{ auction.product.name }}</h5>
+                    <p class="text-muted small">{{ auction.product.description|truncatechars:100 }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Current Bid:</strong> ₹{{ auction.higest_bid }}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Seller:</strong> 
+                    <a href="{% url 'userProfile' auction.seller.id %}" class="text-decoration-none">
+                        {{ auction.seller.username }}
+                    </a>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Status:</strong> 
+                    <span class="badge {% if auction.status == 'Active' %}bg-success{% elif auction.status == 'Starting Soon' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ auction.status }}
+                    </span>
+                </div>
+                
+                <div>
+                    <strong>End Time:</strong> 
+                    <div id="auctionTimer" class="mt-1" data-end-time="{{ auction.end_time|date:'c' }}">
+                        {{ auction.end_time|timeuntil }}
+                    </div>
+                </div>
+                
+                <a href="{% url 'item' auction.id %}" class="btn btn-primary w-100 mt-3">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Auction
+                </a>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Chat Participants</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex align-items-center">
+                        <div class="me-2">
+                            <img src="https://via.placeholder.com/40" alt="Seller" class="rounded-circle" width="40" height="40">
+                        </div>
+                        <div>
+                            <strong>{{ auction.seller.username }}</strong>
+                            <div class="text-muted small">Seller</div>
+                        </div>
+                    </li>
+                    {% for bid in auction.bid_set.all %}
+                        {% if bid.bidder != auction.seller and bid.bidder.id not in participants_ids %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <div class="me-2">
+                                <img src="https://via.placeholder.com/40" alt="Bidder" class="rounded-circle" width="40" height="40">
+                            </div>
+                            <div>
+                                <strong>{{ bid.bidder.username }}</strong>
+                                <div class="text-muted small">Bidder</div>
+                            </div>
+                        </li>
+                        {% endif %}
+                        {% with participants_ids|add:bid.bidder.id as participants_ids %}{% endwith %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments me-2"></i> 
+                    Chat: {{ auction.product.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chat-container" id="chatMessages" style="height: 450px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin-bottom: 20px;">
+                    <div class="text-center text-muted p-3" id="loadingMessages">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="ms-2">Loading messages...</span>
+                    </div>
+                    <div id="noMessages" class="text-center text-muted p-3" style="display: none;">
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                </div>
+                
+                <form id="chatForm">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i> Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatContainer = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const loadingElement = document.getElementById('loadingMessages');
+    const noMessagesElement = document.getElementById('noMessages');
+    const auctionId = "{{ auction.id }}";
+    let lastMessageId = 0;
+    
+    // Function to format message HTML
+    function formatMessage(message) {
+        const isSender = message.is_sender;
+        const isSystem = message.is_system;
+        
+        if (isSystem) {
+            return `
+                <div class="chat-message system my-2 text-center">
+                    <div class="py-2 px-3 bg-light rounded-pill d-inline-block">
+                        <small><i class="fas fa-info-circle me-1"></i> ${message.message}</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="chat-message ${isSender ? 'own' : 'other'} my-3">
+                <div class="d-flex ${isSender ? 'justify-content-end' : 'justify-content-start'}">
+                    <div class="message-content ${isSender ? 'own-message' : 'other-message'} py-2 px-3 rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">${isSender ? 'You' : message.username}</span>
+                            <small class="text-muted ms-2">${message.timestamp}</small>
+                        </div>
+                        <div>${message.message}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Function to add a message to the chat
+    function addMessageToChat(message) {
+        if (document.getElementById('noMessages').style.display !== 'none') {
+            document.getElementById('noMessages').style.display = 'none';
+        }
+        
+        if (message.id > lastMessageId) {
+            lastMessageId = message.id;
+        }
+        
+        chatContainer.insertAdjacentHTML('beforeend', formatMessage(message));
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Function to load messages
+    function loadMessages() {
+        fetch(`/auction/${auctionId}/chat/get/?last_id=${lastMessageId}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                loadingElement.style.display = 'none';
+                
+                if (data.messages.length === 0 && lastMessageId === 0) {
+                    noMessagesElement.style.display = 'block';
+                } else {
+                    noMessagesElement.style.display = 'none';
+                    
+                    data.messages.forEach(message => {
+                        addMessageToChat(message);
+                    });
+                }
+            } else {
+                console.error('Error loading messages:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading messages:', error);
+            loadingElement.style.display = 'none';
+        });
+    }
+    
+    // Function to send a message
+    function sendMessage(messageText) {
+        const formData = new FormData();
+        formData.append('message', messageText);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        fetch(`/auction/${auctionId}/chat/send/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                addMessageToChat(data);
+            } else {
+                console.error('Error sending message:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+        });
+    }
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const message = messageInput.value.trim();
+        if (message) {
+            sendMessage(message);
+            messageInput.value = '';
+            messageInput.focus();
+        }
+    });
+    
+    // Load initial messages
+    loadMessages();
+    
+    // Poll for new messages every 5 seconds
+    setInterval(loadMessages, 5000);
+    
+    // Update auction timer
+    function updateTimer() {
+        const timerElement = document.getElementById('auctionTimer');
+        const endTime = new Date(timerElement.getAttribute('data-end-time'));
+        const now = new Date();
+        
+        let diff = Math.floor((endTime - now) / 1000);
+        
+        if (diff <= 0) {
+            timerElement.innerHTML = '<span class="text-danger">Auction Ended</span>';
+            return;
+        }
+        
+        const days = Math.floor(diff / 86400);
+        diff -= days * 86400;
+        const hours = Math.floor(diff / 3600);
+        diff -= hours * 3600;
+        const minutes = Math.floor(diff / 60);
+        diff -= minutes * 60;
+        const seconds = diff;
+        
+        timerElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    
+    // Update timer initially and every second
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    
+    // Add styles for chat messages
+    const style = document.createElement('style');
+    style.textContent = `
+        .chat-message .message-content {
+            max-width: 80%;
+        }
+        .own-message {
+            background-color: #007bff;
+            color: white;
+        }
+        .other-message {
+            background-color: #f0f0f0;
+            color: #212529;
+        }
+        .chat-message.own .text-muted {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %} 

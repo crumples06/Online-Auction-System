@@ -64,6 +64,19 @@ class Bid(models.Model):
     def __str__(self):
         return self.auction.product.name
 
+class AuctionMessage(models.Model):
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auction_messages')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_system_message = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Message from {self.user.username} in {self.auction.product.name}"
+
 class Review(models.Model):
     winner = models.ForeignKey(User, on_delete=models.CASCADE)  # Only winners can review
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="seller_reviews")

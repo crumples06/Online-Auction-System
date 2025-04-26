@@ -10,7 +10,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, timedelta
 from decimal import Decimal
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.db import models
 from django.db.models import F
 
@@ -176,6 +176,9 @@ def item(request, pk):
     can_review = request.user.is_authenticated and request.user == auction.winner and auction.end_time <= current_time
     has_reviewed = Review.objects.filter(auction=auction, winner=request.user).exists() if request.user.is_authenticated else False
 
+    # Get chat access information for the template
+    can_access_chat = request.user.is_authenticated
+    
     if request.method == 'POST':
         if 'bid_submit' in request.POST:  # Handle Bidding
             if not request.user.is_authenticated:
@@ -198,87 +201,71 @@ def item(request, pk):
 
                 #Auto extending time to prevent bid sniping
                 remaining_time = (auction.end_time - now()).total_seconds()
-                if remaining_time < 300:
-                    auction.end_time += timedelta(minutes=5)
-                    messages.success(request, "Auction extended by 5 minutes!")
-
-                # If there was a previous winner, refund their bid amount
-                if previous_winner and previous_winner != request.user:
-                    prev_winner_wallet, created = Wallet.objects.get_or_create(user=previous_winner)
-                    prev_winner_wallet.balance = F('balance') + Decimal(auction.higest_bid)
-                    prev_winner_wallet.save()
+                if remaining_time < 300:  # If less than 5 minutes remaining
+                    auction.end_time = auction.end_time + timedelta(minutes=5)
                     
-                    # Create refund transaction
-                    WalletTransaction.objects.create(
-                        wallet=prev_winner_wallet,
-                        amount=Decimal(auction.higest_bid),
-                        transaction_type='REFUND',
-                        status='SUCCESS',
-                        description=f"Bid refund for {auction.product.name}"
-                    )
-                
                 auction.winner = request.user
                 auction.save()
 
-                # Deduct the bid amount from the user's wallet
-                wallet.balance = F('balance') - bid_amount
-                wallet.save()
-                
-                # Create payment transaction
-                WalletTransaction.objects.create(
-                    wallet=wallet,
-                    amount=bid_amount,
-                    transaction_type='PAYMENT',
-                    status='SUCCESS',
-                    description=f"Bid payment for {auction.product.name}"
+                # Record the bid
+                Bid.objects.create(
+                    auction=auction,
+                    bidder=request.user,
+                    bid_amount=bid_amount
                 )
-
-                Bid.objects.create(auction=auction, bidder=request.user, bid_amount=bid_amount)
-                messages.success(request, 'Your bid has been placed successfully.')
-
-                if previous_winner and previous_winner != request.user:
-                    send_notification_email(
-                        subject='You have been outbid!',
-                        message=f"Your bid has been surpassed on {auction.product.name}. Place a higher bid to win!",
-                        recipient_email=previous_winner.email
-                    )
+                
+                # Add system message about the bid in the chat
+                AuctionMessage.objects.create(
+                    auction=auction,
+                    user=request.user,
+                    message=f"{request.user.username} placed a bid of ₹{bid_amount}",
+                    is_system_message=True
+                )
+                
+                messages.success(request, f"Bid placed successfully! You are now the highest bidder at ₹{bid_amount}.")
             else:
-                messages.error(request, 'Your bid must be higher than the current highest bid.')
-
-        elif 'review_submit' in request.POST:  # Handle Review Submission
-            if can_review and not has_reviewed:  # Only winner can review
-                form = ReviewForm(request.POST)
-                if form.is_valid():
-                    review = form.save(commit=False)
-                    review.winner = request.user
-                    review.seller = auction.seller
-                    review.auction = auction
-                    review.save()
-                    messages.success(request, "Review submitted successfully!")
-                    return redirect('item', pk=auction.id)
+                messages.error(request, "Your bid must be higher than the current highest bid.")
+                
+        elif 'review_submit' in request.POST and can_review and not has_reviewed:
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+            
+            if rating and comment:
+                Review.objects.create(
+                    auction=auction,
+                    winner=request.user,
+                    seller=auction.seller,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, "Your review has been submitted. Thank you for your feedback!")
+                return redirect('item', pk=auction.id)
             else:
-                messages.error(request, "Only the auction winner can leave a review.")
-
-    # Allow winner to see review form
-    if request.user.is_authenticated and request.user == auction.winner:
-        form = ReviewForm()
-
-    # Initialize watched_auctions_ids for authenticated users only
-    watched_auctions_ids = []
+                messages.error(request, "Both rating and comment are required.")
+    
+    # Get user's wallet balance if authenticated
+    wallet_balance = 0
     if request.user.is_authenticated:
-        watched_auctions_ids = request.user.watchlist.all().values_list('auction_id', flat=True)
-        
-        # Get wallet balance for UI display
         wallet, created = Wallet.objects.get_or_create(user=request.user)
-
+        wallet_balance = wallet.balance
+    
+    # Get ratings for seller if there are any reviews
+    seller_reviews = Review.objects.filter(seller=auction.seller)
+    avg_rating = seller_reviews.aggregate(avg=models.Avg('rating'))['avg'] if seller_reviews else 0
+    total_reviews = seller_reviews.count()
+    
     context = {
-        'watched_auctions_ids': watched_auctions_ids,
         'auction': auction,
         'bids': bids,
-        'reviews': reviews,
+        'watched_auctions_ids': request.user.watchlist.all().values_list('auction_id', flat=True) if request.user.is_authenticated else [],
         'now': current_time,
-        'form': form,  # Only for the winner
-        'wallet_balance': wallet.balance if request.user.is_authenticated else 0,
+        'wallet_balance': wallet_balance,
+        'can_review': can_review,
+        'has_reviewed': has_reviewed,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'total_reviews': total_reviews,
+        'can_access_chat': can_access_chat
     }
     return render(request, 'item.html', context)
 
@@ -483,4 +470,81 @@ def process_payment(request, transaction_id):
         'transaction': transaction,
     }
     return render(request, 'process_payment.html', context)
+
+@login_required(login_url='login')
+def auction_chat(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+    
+    # No longer checking if user is participant or seller - any authenticated user can view
+    
+    # Get messages for this auction
+    chat_messages = AuctionMessage.objects.filter(auction=auction).order_by('created_at')
+    
+    context = {
+        'auction': auction,
+        'chat_messages': chat_messages,
+    }
+    return render(request, 'auction_chat.html', context)
+
+@login_required(login_url='login')
+def send_message(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+    
+    # Any authenticated user can send messages now
+    
+    if request.method == 'POST':
+        message_text = request.POST.get('message', '').strip()
+        
+        if message_text:
+            # Create the message
+            message = AuctionMessage.objects.create(
+                auction=auction,
+                user=request.user,
+                message=message_text
+            )
+            
+            # Return a JSON response for AJAX requests
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'message_id': message.id,
+                    'username': message.user.username,
+                    'message': message.message,
+                    'timestamp': message.created_at.strftime('%b %d, %Y, %I:%M %p'),
+                    'is_sender': True
+                })
+            
+            # For non-AJAX requests redirect back to the auction page
+            return redirect('auction_chat', auction_id=auction_id)
+    
+    return redirect('auction_chat', auction_id=auction_id)
+
+@login_required(login_url='login')
+def get_messages(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+    
+    # All authenticated users can view chat messages
+    
+    # Get the last message ID from the request to fetch only newer messages
+    last_message_id = request.GET.get('last_id', 0)
+    
+    # Get messages newer than the last ID
+    new_messages = AuctionMessage.objects.filter(
+        auction=auction, 
+        id__gt=last_message_id
+    ).order_by('created_at')
+    
+    # Format messages for JSON response
+    messages_data = []
+    for message in new_messages:
+        messages_data.append({
+            'id': message.id,
+            'username': message.user.username,
+            'message': message.message,
+            'timestamp': message.created_at.strftime('%b %d, %Y, %I:%M %p'),
+            'is_sender': message.user.id == request.user.id,
+            'is_system': message.is_system_message
+        })
+    
+    return JsonResponse({'status': 'success', 'messages': messages_data})
 
